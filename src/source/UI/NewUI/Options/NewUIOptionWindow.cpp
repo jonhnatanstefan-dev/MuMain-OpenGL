@@ -295,11 +295,13 @@ bool SEASON3B::CNewUIOptionWindow::UpdateMouseEvent()
                 // regardless of which UI route the user took to enter windowed mode.
                 ChangeDisplaySettings(nullptr, 0);
 
-                DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU
-                            | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN
-                            | WS_VISIBLE;
+                DWORD style = WS_OVERLAPPEDWINDOW
+            		| WS_CLIPCHILDREN
+            		| WS_VISIBLE;
                 SetWindowLongPtr(g_hWnd, GWL_STYLE, style);
-
+		ReleaseCapture();
+		ClipCursor(nullptr);
+		
                 RECT windowRect = { 0, 0, (LONG)WindowWidth, (LONG)WindowHeight };
                 AdjustWindowRect(&windowRect, style, FALSE);
                 SetWindowPos(g_hWnd, HWND_NOTOPMOST, 100, 100,
@@ -405,7 +407,10 @@ bool SEASON3B::CNewUIOptionWindow::UpdateMouseEvent()
                 if (m_bWindowedMode)
                 {
                     RECT windowRect = { 0, 0, (LONG)desiredW, (LONG)desiredH };
-                    AdjustWindowRect(&windowRect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN, FALSE);
+                    AdjustWindowRect(
+   			 &windowRect,
+    			 WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+    			 FALSE);
                     SetWindowPos(g_hWnd, HWND_TOP, 0, 0,
                                  windowRect.right - windowRect.left,
                                  windowRect.bottom - windowRect.top,

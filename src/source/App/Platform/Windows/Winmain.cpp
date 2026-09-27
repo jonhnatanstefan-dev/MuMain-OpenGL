@@ -1044,12 +1044,27 @@ void MuApplyWindowResolution(unsigned int width, unsigned int height, bool windo
     const int w = static_cast<int>(width);
     const int h = static_cast<int>(height);
 
-    if (windowed)
-    {
-        SDL_SetWindowFullscreen(g_sdlWindow, false);
-        SDL_SetWindowSize(g_sdlWindow, w, h);
-        SDL_SetWindowPosition(g_sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-    }
+if (windowed)
+{
+    // Leave fullscreen first and wait until Windows/SDL applies it.
+    SDL_SetWindowFullscreen(g_sdlWindow, false);
+    SDL_SyncWindow(g_sdlWindow);
+
+    // Ensure a normal decorated, resizable Windows window.
+    SDL_RestoreWindow(g_sdlWindow);
+    SDL_SetWindowBordered(g_sdlWindow, true);
+    SDL_SetWindowResizable(g_sdlWindow, true);
+
+    // Apply the selected client resolution.
+    SDL_SetWindowSize(g_sdlWindow, w, h);
+    SDL_SetWindowPosition(
+        g_sdlWindow,
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED);
+
+    // SDL window operations can be asynchronous on Windows.
+    SDL_SyncWindow(g_sdlWindow);
+}
     else
     {
         // Pick the closest real fullscreen mode so the monitor switches
@@ -1524,10 +1539,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
-
     SDL_WindowFlags windowFlags = SDL_WINDOW_OPENGL;
-    if (g_bUseWindowMode != TRUE)
-        windowFlags |= SDL_WINDOW_FULLSCREEN;
+
+    if (g_bUseWindowMode == TRUE)
+    {
+    windowFlags |= SDL_WINDOW_RESIZABLE;
+    }
+    else
+    {
+    windowFlags |= SDL_WINDOW_FULLSCREEN;
+    }
 
     g_sdlWindow = SDL_CreateWindow("MU Online", static_cast<int>(WindowWidth), static_cast<int>(WindowHeight), windowFlags);
     if (!g_sdlWindow)
