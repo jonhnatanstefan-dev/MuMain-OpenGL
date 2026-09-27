@@ -942,13 +942,22 @@ void SEASON3B::CNewUIOptionWindow::ApplyResolution()
 
     // Resize the window to the new dimensions.
     if (g_hWnd && g_bUseWindowMode)
-    {
-        RECT windowRect = { 0, 0, (LONG)newWidth, (LONG)newHeight };
-        AdjustWindowRect(&windowRect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN, FALSE);
-        SetWindowPos(g_hWnd, HWND_TOP, 0, 0,
-                     windowRect.right - windowRect.left,
-                     windowRect.bottom - windowRect.top,
-                     SWP_NOMOVE | SWP_NOZORDER);
+{
+    RECT windowRect = { 0, 0, (LONG)newWidth, (LONG)newHeight };
+
+    AdjustWindowRect(
+        &windowRect,
+        WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+        FALSE);
+
+    SetWindowPos(
+        g_hWnd,
+        HWND_TOP,
+        0,
+        0,
+        windowRect.right - windowRect.left,
+        windowRect.bottom - windowRect.top,
+        SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
     else if (g_hWnd)
     {
@@ -961,7 +970,9 @@ void SEASON3B::CNewUIOptionWindow::ApplyResolution()
     // WindowWidth/Height/screen rates and called ReinitializeFonts() and
     // UpdateResolutionDependentSystems(). Don't repeat that work here — just
     // persist the new size in config.
-    GameConfig::GetInstance().SetWindowSize(WindowWidth, WindowHeight);
+    GameConfig::GetInstance().SetWindowSize(
+    	static_cast<int>(newWidth),
+    	static_cast<int>(newHeight));
     GameConfig::GetInstance().Save();
 
     // Fullscreen SetWindowPos with SWP_FRAMECHANGED deactivated the window;

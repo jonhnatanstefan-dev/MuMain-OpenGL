@@ -57,6 +57,8 @@ void GameConfig::Load()
     m_windowWidth  = ReadInt(CfgSectionWindow, CfgKeyWidth, CfgDefaultWindowWidth);
     m_windowHeight = ReadInt(CfgSectionWindow, CfgKeyHeight, CfgDefaultWindowHeight);
     m_windowMode   = ReadBool(CfgSectionWindow, CfgKeyWindowed, CfgDefaultWindowed);
+    m_windowX = ReadInt(CfgSectionWindow, CfgKeyWindowX, CfgDefaultWindowX);
+    m_windowY = ReadInt(CfgSectionWindow, CfgKeyWindowY, CfgDefaultWindowY);
 
     m_soundVolume  = ReadInt(CfgSectionAudio, CfgKeySoundVolume, CfgDefaultSoundVolume);
     m_musicVolume  = ReadInt(CfgSectionAudio, CfgKeyMusicVolume, CfgDefaultMusicVolume);
@@ -95,6 +97,8 @@ void GameConfig::Save()
     WriteInt(CfgSectionWindow, CfgKeyWidth, m_windowWidth);
     WriteInt(CfgSectionWindow, CfgKeyHeight, m_windowHeight);
     WriteBool(CfgSectionWindow, CfgKeyWindowed, m_windowMode);
+    WriteInt(CfgSectionWindow, CfgKeyWindowX, m_windowX);
+    WriteInt(CfgSectionWindow, CfgKeyWindowY, m_windowY);
 
     WriteInt(CfgSectionAudio, CfgKeySoundVolume, m_soundVolume);
     WriteInt(CfgSectionAudio, CfgKeyMusicVolume, m_musicVolume);
@@ -117,7 +121,11 @@ void GameConfig::SetWindowSize(int width, int height)
     m_windowWidth = width;
     m_windowHeight = height;
 }
-
+void GameConfig::SetWindowPosition(int x, int y)
+{
+    m_windowX = x;
+    m_windowY = y;
+}
 void GameConfig::SetWindowMode(bool windowed)
 {
     m_windowMode = windowed;

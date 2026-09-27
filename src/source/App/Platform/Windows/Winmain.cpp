@@ -1128,12 +1128,24 @@ MSG MainLoop()
                     ? -static_cast<int>(event.wheel.y)
                     : static_cast<int>(event.wheel.y);
                 break;
-            case SDL_EVENT_WINDOW_RESIZED:
-                HandleWindowResize(event.window.data1, event.window.data2);
-                break;
-            case SDL_EVENT_WINDOW_FOCUS_GAINED:
-                HandleFocusChange(true);
-                break;
+
+           case SDL_EVENT_WINDOW_RESIZED:
+    HandleWindowResize(event.window.data1, event.window.data2);
+    break;
+
+case SDL_EVENT_WINDOW_MOVED:
+    if (g_bUseWindowMode == TRUE)
+    {
+        GameConfig::GetInstance().SetWindowPosition(
+            event.window.data1,
+            event.window.data2);
+    }
+    break;
+
+case SDL_EVENT_WINDOW_FOCUS_GAINED:
+    HandleFocusChange(true);
+    break;
+
 #ifndef _WIN32
             case SDL_EVENT_WINDOW_MOUSE_ENTER:
                 // Wayland can deliver the first pointer-enter after the startup
@@ -1583,6 +1595,45 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
         SDL_GetWindowProperties(g_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
     g_hDC = GetDC(g_hWnd);
     g_hRC = wglGetCurrentContext();
+    // Restore the last window position when it still belongs to
+    // one of the currently connected monitors.
+    if (g_bUseWindowMode == TRUE)
+    {
+        const int savedX = GameConfig::GetInstance().GetWindowX();
+        const int savedY = GameConfig::GetInstance().GetWindowY();
+
+        RECT currentRect = {};
+        if (GetWindowRect(g_hWnd, &currentRect))
+        {
+            const LONG outerWidth  = currentRect.right - currentRect.left;
+            const LONG outerHeight = currentRect.bottom - currentRect.top;
+
+            RECT savedRect = {
+                static_cast<LONG>(savedX),
+                static_cast<LONG>(savedY),
+                static_cast<LONG>(savedX) + outerWidth,
+                static_cast<LONG>(savedY) + outerHeight
+            };
+
+            HMONITOR monitor = MonitorFromRect(
+                &savedRect,
+                MONITOR_DEFAULTTONULL);
+
+            if (monitor != nullptr)
+            {
+                SetWindowPos(
+                    g_hWnd,
+                    nullptr,
+                    savedX,
+                    savedY,
+                    0,
+                    0,
+                    SWP_NOSIZE |
+                    SWP_NOZORDER |
+                    SWP_NOACTIVATE);
+            }
+        }
+    }
 
     // Drive the existing WndProc from SDL's Win32 messages (transitional, #442).
     SDL_SetWindowsMessageHook(Win32MessageHook, nullptr);

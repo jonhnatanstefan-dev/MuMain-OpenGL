@@ -14,9 +14,11 @@ namespace CfgSections
 namespace CfgKeys
 {
     // Window
-    inline constexpr wchar_t CfgKeyWidth[]      = L"Width";
-    inline constexpr wchar_t CfgKeyHeight[]     = L"Height";
-    inline constexpr wchar_t CfgKeyWindowed[]   = L"Windowed";
+   inline constexpr wchar_t CfgKeyWidth[]      = L"Width";
+   inline constexpr wchar_t CfgKeyHeight[]     = L"Height";
+   inline constexpr wchar_t CfgKeyWindowed[]   = L"Windowed";
+   inline constexpr wchar_t CfgKeyWindowX[]    = L"X";
+   inline constexpr wchar_t CfgKeyWindowY[]    = L"Y";
 
     // Audio — volume 0 = off, >0 = on (no separate Enabled flag).
     inline constexpr wchar_t CfgKeySoundVolume[]  = L"SoundVolume";
@@ -41,9 +43,13 @@ namespace CfgKeys
 
 namespace CfgDefaults
 {
-    inline constexpr int  CfgDefaultWindowWidth  = 1024;
-    inline constexpr int  CfgDefaultWindowHeight = 768;
-    inline constexpr bool CfgDefaultWindowed     = true;
+   inline constexpr int  CfgDefaultWindowWidth  = 1024;
+   inline constexpr int  CfgDefaultWindowHeight = 768;
+   inline constexpr bool CfgDefaultWindowed     = true;
+
+   // Valor sentinela: significa que ainda não existe posição salva.
+   inline constexpr int CfgDefaultWindowX = -2147483647;
+   inline constexpr int CfgDefaultWindowY = -2147483647;
 
     inline constexpr int  CfgDefaultSoundVolume = 5;
     inline constexpr int  CfgDefaultMusicVolume = 5;

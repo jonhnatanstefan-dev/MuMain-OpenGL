@@ -18,8 +18,12 @@ public:
     int  GetWindowHeight() const { return m_windowHeight; }
     bool GetWindowMode()   const { return m_windowMode; }
 
+    int GetWindowX() const { return m_windowX; }
+    int GetWindowY() const { return m_windowY; }
+
     void SetWindowSize(int width, int height);
     void SetWindowMode(bool windowed);
+    void SetWindowPosition(int x, int y);
 
     // Audio — volume 0 = off, >0 = on. No separate Enabled flag.
     int  GetSoundVolume()  const { return m_soundVolume; }
@@ -75,6 +79,9 @@ private:
     int  m_windowWidth;
     int  m_windowHeight;
     bool m_windowMode;
+
+    int m_windowX;
+    int m_windowY;
 
     int  m_soundVolume;
     int  m_musicVolume;
