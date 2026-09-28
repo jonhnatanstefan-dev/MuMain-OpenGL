@@ -17,6 +17,7 @@
 #include "World/MapInfra/MapManager.h"
 #include "Camera/CameraProjection.h"
 #include "Camera/CameraState.h"
+#include "Scenes/SceneCore.h"
 
 // DevEditor forward declarations (must be at global scope)
 #ifdef _EDITOR
@@ -271,7 +272,10 @@ void SEASON3B::CNewUINameWindow::RenderName()
 
 void SEASON3B::CNewUINameWindow::RenderMonsterHealthBars()
 {
-    if (!m_bShowMonsterHealthBar)
+    // The name window also exists in login/character-selection scenes.
+    // Monster objects and the world camera are only valid for this overlay
+    // after the client has actually entered the main game scene.
+    if (!m_bShowMonsterHealthBar || SceneFlag != MAIN_SCENE)
         return;
 
     for (int i = 0; i < MAX_CHARACTERS_CLIENT; i++)
