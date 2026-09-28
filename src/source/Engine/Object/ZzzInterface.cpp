@@ -106,6 +106,10 @@ int   MouseUpdateTimeMax = 6;
 // A fresh press (e.g. deliberately clicking the ground to walk away) still works normally.
 static bool s_bIgnoreHeldClickAfterNpcTalk = false;
 
+// Normal NPC interaction range, in terrain tiles. Pathfinding should stop
+// near the NPC instead of trying to enter the NPC's occupied tile.
+static constexpr float NPC_TALK_RANGE = 2.5f;
+
 // Client-side bulk stat command queue. OpenMU exposes the normal single-point
 // stat packet but does not provide the legacy private-server /f /a /v /e /c
 // chat commands. Queueing keeps compatibility without flooding hundreds or
@@ -1643,15 +1647,46 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 		{
 			MouseUpdateTimeMax = 12;
 
+			// Never send a talk packet while the hero is still out of range.
+			// OpenMU advances the server-side player state to NpcDialogOpened as
+			// soon as it accepts TalkToNpcRequest. A premature request can leave
+			// that state stuck even though no NPC window became visible.
+			if (TargetNpc < 0 || TargetNpc >= MAX_CHARACTERS_CLIENT)
+			{
+				TargetNpc = -1;
+				ActionTarget = -1;
+				c->MovementType = MOVEMENT_MOVE;
+				break;
+			}
+
+			TargetX = (int)(CharactersClient[TargetNpc].Object.Position[0] / TERRAIN_SCALE);
+			TargetY = (int)(CharactersClient[TargetNpc].Object.Position[1] / TERRAIN_SCALE);
+
+			if (!CheckTile(c, o, NPC_TALK_RANGE))
+			{
+				if (PathFinding2(c->PositionX, c->PositionY, TargetX, TargetY, &c->Path, NPC_TALK_RANGE))
+				{
+					c->MovementType = MOVEMENT_TALK;
+					SendMove(c, o);
+				}
+				else
+				{
+					// No valid route: cancel the pending local interaction instead of
+					// poisoning the server dialog state with an out-of-range request.
+					TargetNpc = -1;
+					ActionTarget = -1;
+					c->MovementType = MOVEMENT_MOVE;
+					s_bIgnoreHeldClickAfterNpcTalk = false;
+				}
+				break;
+			}
+
 			const bool isCryWolfElf = M34CryWolf1st::Get_State_Only_Elf() && M34CryWolf1st::IsCyrWolf1st();
 			if (!isCryWolfElf)
 			{
 				SetPlayerStop(c);
 				c->Movement = false;
 			}
-
-			if (TargetNpc == -1)
-				break;
 
 			// === Rozpoznanie napotkanego NPC ===
 			const int npcIndex = 205;
@@ -3393,6 +3428,13 @@ void MoveHero()
                 }
                 Attacking = -1;
                 SelectedCharacter = -1;
+
+                // Recover from a server-side NPC dialog which may have been left
+                // open by an earlier failed/premature TalkToNpcRequest. When the
+                // server is already in NpcDialogOpened, it rejects subsequent NPC
+                // talks until CloseNpcRequest, teleport or reconnect resets it.
+                SocketClient->ToGameServer()->SendCloseNpcRequest();
+
                 // Talking to an NPC opens a window (dialogue/quest/shop). The physical button is
                 // usually still held at this point, and the held button keeps re-entering this
                 // handler every frame. The moment the cursor isn't on the NPC's pick-box it would
@@ -3430,18 +3472,39 @@ void MoveHero()
                     }
                     else
                     {
-                        if (PathFinding2((c->PositionX), (c->PositionY), TargetX, TargetY, &c->Path))
+                        constexpr float KANTURU_NPC_RANGE = 5.5f;
+                        if (PathFinding2((c->PositionX), (c->PositionY), TargetX, TargetY, &c->Path, KANTURU_NPC_RANGE))
+                        {
                             SendMove(c, o);
+                        }
                         else
-                            Action(c, o, true);
+                        {
+                            TargetNpc = -1;
+                            ActionTarget = -1;
+                            c->MovementType = MOVEMENT_MOVE;
+                            s_bIgnoreHeldClickAfterNpcTalk = false;
+                        }
                     }
                 }
                 else
                 {
-                    if (PathFinding2((c->PositionX), (c->PositionY), TargetX, TargetY, &c->Path))
-                        SendMove(c, o);
-                    else
+                    if (CheckTile(c, o, NPC_TALK_RANGE))
+                    {
                         Action(c, o, true);
+                    }
+                    else if (PathFinding2((c->PositionX), (c->PositionY), TargetX, TargetY, &c->Path, NPC_TALK_RANGE))
+                    {
+                        SendMove(c, o);
+                    }
+                    else
+                    {
+                        // PathFinding2(false) also means "no path"; it must not
+                        // be treated as "already close enough" for NPC talks.
+                        TargetNpc = -1;
+                        ActionTarget = -1;
+                        c->MovementType = MOVEMENT_MOVE;
+                        s_bIgnoreHeldClickAfterNpcTalk = false;
+                    }
                 }
             }
             else if (SelectedItem != -1)
