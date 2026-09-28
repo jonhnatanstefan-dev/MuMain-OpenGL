@@ -921,9 +921,9 @@ void SEASON3B::CNewUIMainFrameWindow::LoadSkillHotKeys(const wchar_t* characterN
     g_pSkillList->LoadHotKeysForCharacter(characterName);
 }
 
-void SEASON3B::CNewUIMainFrameWindow::SetSkillHotKey(int iHotKey, int iSkillType)
+void SEASON3B::CNewUIMainFrameWindow::SetSkillHotKey(int iHotKey, int iSkillType, bool persist)
 {
-    g_pSkillList->SetHotKey(iHotKey, iSkillType);
+    g_pSkillList->SetHotKey(iHotKey, iSkillType, persist);
 }
 
 int SEASON3B::CNewUIMainFrameWindow::GetSkillHotKey(int iHotKey)
@@ -1345,8 +1345,6 @@ void SEASON3B::CNewUISkillList::Reset()
     {
         m_iHotKeySkillType[i] = -1;
     }
-    m_hotKeyCharacterName.clear();
-
     m_EventState = EVENT_NONE;
 }
 
@@ -1818,6 +1816,20 @@ void SEASON3B::CNewUISkillList::LoadHotKeysForCharacter(const wchar_t* character
     const auto saved = GameConfig::GetInstance().LoadSkillHotKeys(
         m_hotKeyCharacterName, SKILLHOTKEY_COUNT);
 
+    bool hasSavedHotKey = false;
+    for (int value : saved)
+    {
+        if (value != -1)
+        {
+            hasSavedHotKey = true;
+            break;
+        }
+    }
+
+    // If there is no local set yet, keep whatever the server supplied.
+    if (!hasSavedHotKey)
+        return;
+
     for (int i = 0; i < SKILLHOTKEY_COUNT; ++i)
     {
         int value = saved[i];
@@ -1830,7 +1842,7 @@ void SEASON3B::CNewUISkillList::LoadHotKeysForCharacter(const wchar_t* character
     }
 }
 
-void SEASON3B::CNewUISkillList::SetHotKey(int iHotKey, int iSkillType)
+void SEASON3B::CNewUISkillList::SetHotKey(int iHotKey, int iSkillType, bool persist)
 {
     if (iHotKey < 0 || iHotKey >= SKILLHOTKEY_COUNT)
         return;
@@ -1846,7 +1858,7 @@ void SEASON3B::CNewUISkillList::SetHotKey(int iHotKey, int iSkillType)
 
     m_iHotKeySkillType[iHotKey] = iSkillType;
 
-    if (!m_hotKeyCharacterName.empty())
+    if (persist && !m_hotKeyCharacterName.empty())
     {
         GameConfig::GetInstance().SaveSkillHotKeys(
             m_hotKeyCharacterName,
