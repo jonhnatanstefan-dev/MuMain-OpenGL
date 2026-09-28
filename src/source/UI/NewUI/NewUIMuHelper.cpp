@@ -198,12 +198,16 @@ void CNewUIMuHelper::InitButtons()
     m_TabBtn.ChangeFrame(m_iCurrentOpenTab);
 
     const bool isPortuguese = std::strcmp(I18N::GetCurrentLocale(), "pt") == 0;
-    static const wchar_t* kPtSetting = L"Config.";
+    static const wchar_t* kPtSetting = L"Cfg";
     static const wchar_t* kPtSave = L"Salvar";
     static const wchar_t* kPtReset = L"Reset";
+    static const wchar_t* kPtAdd = L"Add";
+    static const wchar_t* kPtDelete = L"Del";
     const wchar_t* const* settingLabel = isPortuguese ? &kPtSetting : &I18N::Game::Setting;
     const wchar_t* const* saveLabel = isPortuguese ? &kPtSave : &I18N::Game::SaveSetting;
     const wchar_t* const* resetLabel = isPortuguese ? &kPtReset : &I18N::Game::Initialization;
+    const wchar_t* const* addLabel = isPortuguese ? &kPtAdd : &I18N::Game::Add;
+    const wchar_t* const* deleteLabel = isPortuguese ? &kPtDelete : &I18N::Game::Delete;
 
     InsertButton(IMAGE_CHAINFO_BTN_STAT, m_Pos.x + 56, m_Pos.y + 78, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_HUNT_RANGE_ADD, 0);
     InsertButton(IMAGE_MACROUI_HELPER_RAGEMINUS, m_Pos.x + 56, m_Pos.y + 97, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_HUNT_RANGE_MINUS, 0);
@@ -217,8 +221,8 @@ void CNewUIMuHelper::InitButtons()
 
     InsertButton(IMAGE_CHAINFO_BTN_STAT, m_Pos.x + 56, m_Pos.y + 78, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_PICK_RANGE_ADD, 1);
     InsertButton(IMAGE_MACROUI_HELPER_RAGEMINUS, m_Pos.x + 56, m_Pos.y + 97, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_PICK_RANGE_MINUS, 1);
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 208, 38, 24, 1, 0, 1, 1, &I18N::Game::Add, nullptr, BUTTON_ID_ADD_OTHER_ITEM, 1); //-- Buff
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 309, 38, 24, 1, 0, 1, 1, &I18N::Game::Delete, nullptr, BUTTON_ID_DELETE_OTHER_ITEM, 1); //-- Buff
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 208, 38, 24, 1, 0, 1, 1, addLabel, nullptr, BUTTON_ID_ADD_OTHER_ITEM, 1); //-- Buff
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 309, 38, 24, 1, 0, 1, 1, deleteLabel, nullptr, BUTTON_ID_DELETE_OTHER_ITEM, 1); //-- Buff
     //--
     InsertButton(IMAGE_IGS_BUTTON, m_Pos.x + 120, m_Pos.y + 388, 52, 26, 1, 0, 1, 1, saveLabel, nullptr, BUTTON_ID_SAVE_CONFIG, -1);
     InsertButton(IMAGE_IGS_BUTTON, m_Pos.x + 65, m_Pos.y + 388, 52, 26, 1, 0, 1, 1, resetLabel, nullptr, BUTTON_ID_INIT_CONFIG, -1);
