@@ -3237,6 +3237,17 @@ void MoveHero()
                 && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE)
                 )
             {
+                // NPC interaction must take priority over MU Helper combat.
+                // Otherwise the helper timer can keep rewriting ActionTarget /
+                // movement state while the hero is walking to the shop, making
+                // the dialogue slow to open or fail intermittently.
+                if (MUHelper::g_MuHelper.IsActive())
+                {
+                    MUHelper::g_MuHelper.TriggerStop();
+                    MUHelper::g_MuHelper.Stop();
+                }
+                Attacking = -1;
+                SelectedCharacter = -1;
                 // Talking to an NPC opens a window (dialogue/quest/shop). The physical button is
                 // usually still held at this point, and the held button keeps re-entering this
                 // handler every frame. The moment the cursor isn't on the NPC's pick-box it would
