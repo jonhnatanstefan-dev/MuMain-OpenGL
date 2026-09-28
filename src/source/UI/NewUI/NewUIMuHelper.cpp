@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <array>
+#include <cstring>
 #include "I18N/All.h"
 
 #include "UI/Legacy/UIControls.h"
