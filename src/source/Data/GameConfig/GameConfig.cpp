@@ -10,6 +10,25 @@
 #include "Core/Platform/WinIni.h"  // private-profile (.ini) API
 #include "Core/Platform/Dpapi.h"   // DPAPI credential crypto (no-op off Windows)
 
+namespace
+{
+    constexpr int MIN_WINDOW_WIDTH = 640;
+    constexpr int MIN_WINDOW_HEIGHT = 480;
+    constexpr int MAX_WINDOW_WIDTH = 7680;
+    constexpr int MAX_WINDOW_HEIGHT = 4320;
+    constexpr int MIN_GAME_FPS = 25;
+    constexpr int MAX_GAME_FPS = 360;
+    constexpr int MAX_VOLUME_LEVEL = 10;
+
+    int NormalizeFpsLimit(int fps)
+    {
+        if (fps < 0)
+            return -1;
+
+        return std::clamp(fps, MIN_GAME_FPS, MAX_GAME_FPS);
+    }
+}
+
 GameConfig& GameConfig::GetInstance()
 {
     static GameConfig instance;
@@ -60,9 +79,15 @@ void GameConfig::Load()
     m_windowX = ReadInt(CfgSectionWindow, CfgKeyWindowX, CfgDefaultWindowX);
     m_windowY = ReadInt(CfgSectionWindow, CfgKeyWindowY, CfgDefaultWindowY);
     m_vsync = ReadBool(CfgSectionWindow, CfgKeyVSync, CfgDefaultVSync);
-    m_fpsLimit = ReadInt(CfgSectionWindow, CfgKeyFPSLimit, CfgDefaultFPSLimit);
-    m_soundVolume  = ReadInt(CfgSectionAudio, CfgKeySoundVolume, CfgDefaultSoundVolume);
-    m_musicVolume  = ReadInt(CfgSectionAudio, CfgKeyMusicVolume, CfgDefaultMusicVolume);
+    m_fpsLimit = NormalizeFpsLimit(ReadInt(CfgSectionWindow, CfgKeyFPSLimit, CfgDefaultFPSLimit));
+    m_soundVolume  = std::clamp(ReadInt(CfgSectionAudio, CfgKeySoundVolume, CfgDefaultSoundVolume), 0, MAX_VOLUME_LEVEL);
+    m_musicVolume  = std::clamp(ReadInt(CfgSectionAudio, CfgKeyMusicVolume, CfgDefaultMusicVolume), 0, MAX_VOLUME_LEVEL);
+
+    // Harden values read from a manually edited or partially corrupted config.ini.
+    // Invalid dimensions can otherwise produce zero/negative scale factors and
+    // cascade into input/rendering failures before the Options window is usable.
+    m_windowWidth = std::clamp(m_windowWidth, MIN_WINDOW_WIDTH, MAX_WINDOW_WIDTH);
+    m_windowHeight = std::clamp(m_windowHeight, MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
 
     m_rememberMe        = ReadBool(CfgSectionLogin, CfgKeyRememberMe, CfgDefaultRememberMe);
     m_languageSelection = ReadString(CfgSectionLogin, CfgKeyLanguage, CfgDefaultLanguage);
@@ -71,6 +96,8 @@ void GameConfig::Load()
 
     m_serverIP   = ReadString(CfgSectionConnectionSettings, CfgKeyServerIP, CfgDefaultServerIP);
     m_serverPort = ReadInt(CfgSectionConnectionSettings, CfgKeyServerPort, CfgDefaultServerPort);
+    if (m_serverPort <= 0 || m_serverPort > 65535)
+        m_serverPort = CfgDefaultServerPort;
 
     m_uiLocale = ReadString(CfgSectionUI, CfgKeyUILocale, CfgDefaultUILocale);
 
@@ -120,8 +147,8 @@ void GameConfig::Save()
 
 void GameConfig::SetWindowSize(int width, int height)
 {
-    m_windowWidth = width;
-    m_windowHeight = height;
+    m_windowWidth = std::clamp(width, MIN_WINDOW_WIDTH, MAX_WINDOW_WIDTH);
+    m_windowHeight = std::clamp(height, MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
 }
 void GameConfig::SetWindowPosition(int x, int y)
 {
@@ -140,22 +167,17 @@ void GameConfig::SetVSync(bool enabled)
 
 void GameConfig::SetFPSLimit(int fps)
 {
-    // -1 = ilimitado. Valores positivos abaixo de 25 sao elevados
-    // para a taxa de referencia do motor.
-    if (fps != -1 && fps < 25)
-        fps = 25;
-
-    m_fpsLimit = fps;
+    m_fpsLimit = NormalizeFpsLimit(fps);
 }
 
 void GameConfig::SetSoundVolume(int level)
 {
-    m_soundVolume = level;
+    m_soundVolume = std::clamp(level, 0, MAX_VOLUME_LEVEL);
 }
 
 void GameConfig::SetMusicVolume(int level)
 {
-    m_musicVolume = level;
+    m_musicVolume = std::clamp(level, 0, MAX_VOLUME_LEVEL);
 }
 
 void GameConfig::SetRememberMe(bool remember)
@@ -190,7 +212,8 @@ void GameConfig::SetServerIP(const std::wstring& ip)
 
 void GameConfig::SetServerPort(int port)
 {
-    m_serverPort = port;
+    if (port > 0 && port <= 65535)
+        m_serverPort = port;
 }
 
 void GameConfig::SetZoom(int zoom)
