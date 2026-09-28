@@ -110,7 +110,7 @@ namespace SEASON3B
         DWORD ButtonY[MAX_MASTER_SKILL_CATEGORY];
         CNewUIButton m_CloseBT;
         int CategoryPoint[MAX_MASTER_SKILL_CATEGORY];
-        int skillPoint[MAX_MASTER_SKILL_CATEGORY][MAX_MASTER_TREE_RANK + 1];
+        int skillPoint[MAX_MASTER_SKILL_CATEGORY][MAX_MASTER_TREE_RANK];
         BYTE ConsumePoint;
         int CurSkillID;
         MASTER_SKILL_TREE_CLASS classCode;
@@ -119,7 +119,7 @@ namespace SEASON3B
         DWORD ClassNameTextIndex;
 
         std::map<ActionSkillType, _MASTER_SKILL_TOOLTIP> map_masterSkillToolTip;
-        std::map<WORD, _MASTER_SKILLTREE_DATA> map_masterData;
+        std::map<BYTE, _MASTER_SKILLTREE_DATA> map_masterData;
         
         CNewUIManager* m_pNewUIMng;
 

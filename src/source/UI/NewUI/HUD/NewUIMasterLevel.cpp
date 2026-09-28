@@ -211,7 +211,7 @@ void SEASON3B::CNewUIMasterLevel::InitMasterSkillPoint()
     for (int i = 0; i < 3; i++)
     {
         this->CategoryPoint[i] = 0;
-        for (int k = 0; k <= MAX_MASTER_TREE_RANK; k++)
+        for (int k = 0; k < 10; k++)
         {
             this->skillPoint[i][k] = 0;
         }
@@ -220,8 +220,6 @@ void SEASON3B::CNewUIMasterLevel::InitMasterSkillPoint()
 
 void SEASON3B::CNewUIMasterLevel::SetMasterType(CLASS_TYPE Class)
 {
-    this->classCode = MASTER_SKILL_TREE_CLASS_NONE;
-
     switch (Class)
     {
     case CLASS_GRANDMASTER:
@@ -315,7 +313,7 @@ void SEASON3B::CNewUIMasterLevel::SetMasterSkillTreeData()
             continue;
         }
 
-        if (!this->map_masterData.insert(std::pair<WORD, _MASTER_SKILLTREE_DATA>(m_stMasterSkillTreeData[i].Index, m_stMasterSkillTreeData[i])).second)
+        if (!this->map_masterData.insert(std::pair<BYTE, _MASTER_SKILLTREE_DATA>(m_stMasterSkillTreeData[i].Index, m_stMasterSkillTreeData[i])).second)
         {
             break;
         }
@@ -982,11 +980,6 @@ bool SEASON3B::CNewUIMasterLevel::CheckParentSkill(const _MASTER_SKILLTREE_DATA&
 
 bool SEASON3B::CNewUIMasterLevel::CheckRankPoint(BYTE group, BYTE rank, BYTE skillLevel)
 {
-    if (group >= MAX_MASTER_SKILL_CATEGORY || rank == 0 || rank > MAX_MASTER_TREE_RANK)
-    {
-        return false;
-    }
-
     if (this->skillPoint[group][rank] < skillLevel)
     {
         this->skillPoint[group][rank] = skillLevel;
@@ -997,7 +990,7 @@ bool SEASON3B::CNewUIMasterLevel::CheckRankPoint(BYTE group, BYTE rank, BYTE ski
         return true;
     }
 
-    return this->skillPoint[group][rank - 1] >= MASTER_SKILL_LEVEL_REQ_FOR_NEXT_RANK;
+    return this->skillPoint[group][rank - 1] >= 10;
 }
 
 bool SEASON3B::CNewUIMasterLevel::CheckBeforeSkill(ActionSkillType skill, BYTE skillLevel)
@@ -1058,10 +1051,12 @@ void SEASON3B::CNewUIMasterLevel::SkillUpgrade(int index, BYTE skillLevel, float
 
 void SEASON3B::CNewUIMasterLevel::ClearSkillTreeData()
 {
-    this->map_masterData.clear();
+    if (!map_masterSkillToolTip.empty())
+        this->map_masterData.clear();
 }
 
 void SEASON3B::CNewUIMasterLevel::ClearSkillTooltipData()
 {
-    this->map_masterSkillToolTip.clear();
+    if (!map_masterSkillToolTip.empty())
+        this->map_masterSkillToolTip.clear();
 }

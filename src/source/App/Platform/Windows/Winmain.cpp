@@ -1489,22 +1489,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLin
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nCmdShow)
 #endif
 {
-#ifdef _WIN32
-    // The MU client loads most assets through relative paths (Data\\..., Interface\\...).
-    // Always resolve those paths relative to the directory which contains Main.exe,
-    // regardless of the shell/shortcut working directory used to launch the client.
-    wchar_t executablePath[MAX_PATH] = {};
-    if (GetModuleFileNameW(nullptr, executablePath, MAX_PATH) > 0)
-    {
-        std::filesystem::path executableDirectory(executablePath);
-        executableDirectory = executableDirectory.parent_path();
-        if (!executableDirectory.empty())
-        {
-            SetCurrentDirectoryW(executableDirectory.c_str());
-        }
-    }
-#endif
-
     wchar_t lpszExeVersion[256] = L"unknown";
 
     wchar_t* lpszCommandLine = GetCommandLine();

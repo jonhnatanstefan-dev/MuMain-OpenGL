@@ -212,10 +212,7 @@ bool CNewUIStorageInventoryExt::ProcessClosing() const
 
     CNewUIInventoryCtrl::BackupPickedItem();
     DeleteAllItems();
-
-    // The main storage window owns the vault session and sends SendVaultClosed().
-    // This extended panel is closed together with it, so sending here as well
-    // produced a duplicate vault-close packet.
+    SocketClient->ToGameServer()->SendVaultClosed();
     return true;
 }
 

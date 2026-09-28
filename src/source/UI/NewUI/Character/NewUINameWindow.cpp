@@ -17,7 +17,6 @@
 #include "World/MapInfra/MapManager.h"
 #include "Camera/CameraProjection.h"
 #include "Camera/CameraState.h"
-#include "Scenes/SceneCore.h"
 
 // DevEditor forward declarations (must be at global scope)
 #ifdef _EDITOR
@@ -62,12 +61,7 @@ void DrawHealthBar(int centerX, int topY, float health, int steps, float scale)
 
     // HealthStatus < 0 is the "HP unknown" sentinel (server sends 0xFF -> -1, and
     // the field is initialized to -1), so render a full bar instead of an empty one.
-    float clampedHealth = (health < 0.f) ? 1.f : health;
-    if (clampedHealth > 1.f)
-    {
-        clampedHealth = 1.f;
-    }
-
+    const float clampedHealth = (health < 0.f) ? 1.f : health;
     const int stepHP = (int)(clampedHealth * steps);
 
     // Filled health segments.
@@ -272,10 +266,7 @@ void SEASON3B::CNewUINameWindow::RenderName()
 
 void SEASON3B::CNewUINameWindow::RenderMonsterHealthBars()
 {
-    // The name window also exists in login/character-selection scenes.
-    // Monster objects and the world camera are only valid for this overlay
-    // after the client has actually entered the main game scene.
-    if (!m_bShowMonsterHealthBar || SceneFlag != MAIN_SCENE)
+    if (!m_bShowMonsterHealthBar)
         return;
 
     for (int i = 0; i < MAX_CHARACTERS_CLIENT; i++)
