@@ -171,9 +171,25 @@ void CNewUIMuHelper::SetPos(int x, int y)
 void CNewUIMuHelper::InitButtons()
 {
     std::list<const wchar_t* const*> ltext;
-    ltext.push_back(&I18N::Game::Hunting);
-    ltext.push_back(&I18N::Game::Obtaining);
-    ltext.push_back(&I18N::Game::OtherSettings);
+
+    // The stock translated labels are wider than the 56px tab buttons in
+    // Portuguese and overlap each other. Use concise PT-BR captions while
+    // keeping the normal localized strings for other languages.
+    if (std::strcmp(I18N::GetCurrentLocale(), "pt") == 0)
+    {
+        static const wchar_t* kPtHunting = L"Caça";
+        static const wchar_t* kPtObtaining = L"Coleta";
+        static const wchar_t* kPtOtherSettings = L"Outras";
+        ltext.push_back(&kPtHunting);
+        ltext.push_back(&kPtObtaining);
+        ltext.push_back(&kPtOtherSettings);
+    }
+    else
+    {
+        ltext.push_back(&I18N::Game::Hunting);
+        ltext.push_back(&I18N::Game::Obtaining);
+        ltext.push_back(&I18N::Game::OtherSettings);
+    }
 
     m_TabBtn.CreateRadioGroup(3, IMAGE_WINDOW_TAB_BTN, TRUE);
     m_TabBtn.ChangeRadioText(ltext);
@@ -363,11 +379,15 @@ void CNewUIMuHelper::InitText()
     //InsertText(m_Pos.x + 162, m_Pos.y + 141, I18N::Game::Min, 4, 0);
     InsertText(m_Pos.x + 162, m_Pos.y + 141, L"s", 4, 0);
 
-    InsertText(m_Pos.x + 18, m_Pos.y + 160, I18N::Game::BasicSkill, 5, 0); // Basic Skill
-    InsertText(m_Pos.x + 59, m_Pos.y + 160, I18N::Game::ActivationSkill1, 7, 0); // Activation Skill 1
+    const bool isPortuguese = std::strcmp(I18N::GetCurrentLocale(), "pt") == 0;
+    InsertText(m_Pos.x + 18, m_Pos.y + 160,
+        isPortuguese ? L"Básica" : I18N::Game::BasicSkill, 5, 0);
+    InsertText(m_Pos.x + 59, m_Pos.y + 160,
+        isPortuguese ? L"Ativação 1" : I18N::Game::ActivationSkill1, 7, 0);
     //InsertText(m_Pos.x + 162, m_Pos.y + 178, I18N::Game::Min, 8, 0);
     InsertText(m_Pos.x + 162, m_Pos.y + 178, L"s", 8, 0);
-    InsertText(m_Pos.x + 59, m_Pos.y + 212, I18N::Game::ActivationSkill2, 9, 0); // Activation Skill 2
+    InsertText(m_Pos.x + 59, m_Pos.y + 212,
+        isPortuguese ? L"Ativação 2" : I18N::Game::ActivationSkill2, 9, 0);
 
     //InsertText(m_Pos.x + 162, m_Pos.y + 230, I18N::Game::Min, 10, 0);
     InsertText(m_Pos.x + 162, m_Pos.y + 230, L"s", 10, 0);
