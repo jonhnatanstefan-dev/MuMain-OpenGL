@@ -28,7 +28,7 @@ namespace MUHelper
 		void Toggle();
 		void TriggerStart();
 		void TriggerStop();
-		bool IsActive() { return m_bActive; }
+		bool IsActive() const { return m_bActive.load(); }
 		void AddCost(int iCost) { m_iTotalCost += iCost; }
 		int GetTotalCost() { return m_iTotalCost; }
 
@@ -77,7 +77,7 @@ namespace MUHelper
 		ConfigData m_config;
 		POINT m_posOriginal;
 		std::thread m_timerThread;
-		std::atomic<bool> m_bActive;
+		std::atomic<bool> m_bActive{ false };
 		std::set<int> m_setTargets;
 		std::set<int> m_setTargetsAttacking;
 		std::set<int> m_setItems;
