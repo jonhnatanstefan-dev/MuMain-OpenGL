@@ -102,9 +102,12 @@ namespace SEASON3B
         int m_iResolutionIndex;
         bool m_bWindowedMode;
         int m_iLanguageIndex;
+        bool m_bVSync;
+        int m_iFpsIndex;
 
         CNewUIComboBox m_ResolutionCombo;
         CNewUIComboBox m_LanguageCombo;
+        CNewUIComboBox m_FpsCombo;
 
         void ApplyResolution();
         int FindCurrentResolutionIndex();
@@ -113,6 +116,10 @@ namespace SEASON3B
         void ApplyLanguage();
         int FindCurrentLanguageIndex();
         void InitLanguageCombo();
+
+        void ApplyFrameTiming();
+        int FindCurrentFpsIndex();
+        void InitFpsCombo();
     };
 }
 
