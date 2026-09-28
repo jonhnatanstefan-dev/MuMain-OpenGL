@@ -553,7 +553,25 @@ static void RenderMainSceneUI()
     EndBitmap();
     BeginBitmap();
 
-    RenderCursor();
+    // CURSOR_NATIVE_WHILE_OPTIONS
+    extern BOOL g_bUseWindowMode;
+    extern bool g_UseNativeCursorForOptions;
+    g_UseNativeCursorForOptions =
+        g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_OPTION);
+
+    // In windowed mode the Options window uses the native Windows cursor.
+    // This completely avoids OpenGL Z/depth/scissor ordering issues.
+    if (!(g_bUseWindowMode == TRUE && g_UseNativeCursorForOptions))
+    {
+        // CURSOR_ALWAYS_ON_TOP
+        glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_SCISSOR_BIT | GL_STENCIL_BUFFER_BIT);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_SCISSOR_TEST);
+        glDisable(GL_STENCIL_TEST);
+        glDepthMask(GL_FALSE);
+        RenderCursor();
+        glPopAttrib();
+    }
 
     EndBitmap();
 }

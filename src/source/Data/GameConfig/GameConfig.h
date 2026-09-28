@@ -25,6 +25,11 @@ public:
     void SetWindowMode(bool windowed);
     void SetWindowPosition(int x, int y);
 
+    bool GetVSync() const { return m_vsync; }
+    int  GetFPSLimit() const { return m_fpsLimit; }
+    void SetVSync(bool enabled);
+    void SetFPSLimit(int fps);
+
     // Audio — volume 0 = off, >0 = on. No separate Enabled flag.
     int  GetSoundVolume()  const { return m_soundVolume; }
     int  GetMusicVolume()  const { return m_musicVolume; }
@@ -83,6 +88,8 @@ private:
     int m_windowX;
     int m_windowY;
 
+    bool m_vsync;
+    int  m_fpsLimit;
     int  m_soundVolume;
     int  m_musicVolume;
 

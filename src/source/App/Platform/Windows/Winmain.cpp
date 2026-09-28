@@ -124,6 +124,9 @@ int g_iScreenSaverOldValue = 60 * 15;
 BOOL g_bUseWindowMode = TRUE;
 BOOL g_bUseFullscreenMode = FALSE;
 
+// In windowed mode, the native Windows cursor is used while the Options UI is open.
+bool g_UseNativeCursorForOptions = false;
+
 #include "Audio/AudioPlayer.h"
 
 extern int  LogIn;
@@ -567,20 +570,56 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     break;
     case WM_SETCURSOR:
+    {
+        // Show the native Windows cursor over the title bar, window buttons
+        // and resize borders. Inside the game client area, MU renders its own
+        // cursor, so the native cursor remains hidden.
+        //
+        // Keep the ShowCursor calls balanced. Calling ShowCursor(false) on every
+        // WM_SETCURSOR message drives Win32's internal display counter negative
+        // and can make the pointer stay invisible outside the client area.
+        static bool s_osCursorVisible = false;
+
 #ifdef _EDITOR
-        // When hovering UI (including Open Editor button), let Windows show cursor
-        // Otherwise hide Windows cursor for game cursor
         if (g_MuEditorCore.IsHoveringUI())
         {
-            // Let Windows cursor show - don't hide it
+            if (!s_osCursorVisible)
+            {
+                ShowCursor(TRUE);
+                s_osCursorVisible = true;
+            }
             return DefWindowProc(hwnd, msg, wParam, lParam);
         }
-        else
 #endif
+
+        const UINT hitTest = LOWORD(lParam);
+
+        // In windowed mode use the native cursor over the non-client frame
+        // and while the Options window is open. The OS cursor is composited
+        // after OpenGL, so the Options panel can never cover it.
+        const bool useNativeCursor =
+            (g_bUseWindowMode == TRUE) &&
+            (hitTest != HTCLIENT || g_UseNativeCursorForOptions);
+
+        if (useNativeCursor)
         {
-            ShowCursor(false);
+            if (!s_osCursorVisible)
+            {
+                ShowCursor(TRUE);
+                s_osCursorVisible = true;
+            }
+
+            return DefWindowProc(hwnd, msg, wParam, lParam);
         }
-        break;
+
+        if (s_osCursorVisible)
+        {
+            ShowCursor(FALSE);
+            s_osCursorVisible = false;
+        }
+
+        return TRUE;
+    }
         //-----------------------------
     default:
         break;
@@ -1474,8 +1513,50 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     
     g_ErrorReport.Write(L"> To read config.ini.\r\n");
 
+    // Detect whether the client already has a complete saved window configuration.
+    // Only when Width/Height/Windowed have never been configured do we force the
+    // first startup to 1024x768 in windowed mode. Existing user settings are kept.
+    bool hasSavedWindowConfig = false;
+#ifdef _WIN32
+    wchar_t configExePath[MAX_PATH] = {};
+    if (GetModuleFileNameW(nullptr, configExePath, MAX_PATH) > 0)
+    {
+        std::filesystem::path configPath(configExePath);
+        configPath = configPath.parent_path() / L"config.ini";
+
+        wchar_t valueBuffer[32] = {};
+        const bool hasWidth =
+            GetPrivateProfileStringW(L"Window", L"Width", L"",
+                valueBuffer, static_cast<DWORD>(std::size(valueBuffer)),
+                configPath.c_str()) > 0;
+
+        valueBuffer[0] = L'\0';
+        const bool hasHeight =
+            GetPrivateProfileStringW(L"Window", L"Height", L"",
+                valueBuffer, static_cast<DWORD>(std::size(valueBuffer)),
+                configPath.c_str()) > 0;
+
+        valueBuffer[0] = L'\0';
+        const bool hasWindowed =
+            GetPrivateProfileStringW(L"Window", L"Windowed", L"",
+                valueBuffer, static_cast<DWORD>(std::size(valueBuffer)),
+                configPath.c_str()) > 0;
+
+        hasSavedWindowConfig = hasWidth && hasHeight && hasWindowed;
+    }
+#endif
+
     // Load game settings from INI file first
     GameConfig::GetInstance().Load();
+
+    // First run (or no window configuration yet): start safely at 1024x768
+    // in windowed mode. Never override a configuration already chosen by the user.
+    if (!hasSavedWindowConfig)
+    {
+        GameConfig::GetInstance().SetWindowSize(1024, 768);
+        GameConfig::GetInstance().SetWindowMode(true);
+        GameConfig::GetInstance().Save();
+    }
 
     // Check for command line server override
     WORD wPortNumber;
@@ -1683,11 +1764,19 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     g_ErrorReport.AddSeparator();
 
     InitVSync();
+
+    const bool configVSync = GameConfig::GetInstance().GetVSync();
+    const int configFPSLimit = GameConfig::GetInstance().GetFPSLimit();
+
     if (IsVSyncAvailable())
     {
-        EnableVSync();
-        SetTargetFps(-1); // unlimited
+        if (configVSync)
+            EnableVSync();
+        else
+            DisableVSync();
     }
+
+    SetTargetFps(configFPSLimit);
 
     CreateNewFonts(CalculateFontSizes());
 

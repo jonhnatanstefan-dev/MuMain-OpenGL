@@ -19,6 +19,8 @@ namespace CfgKeys
    inline constexpr wchar_t CfgKeyWindowed[]   = L"Windowed";
    inline constexpr wchar_t CfgKeyWindowX[]    = L"X";
    inline constexpr wchar_t CfgKeyWindowY[]    = L"Y";
+    inline constexpr wchar_t CfgKeyVSync[]      = L"VSync";
+    inline constexpr wchar_t CfgKeyFPSLimit[]   = L"FPSLimit";
 
     // Audio — volume 0 = off, >0 = on (no separate Enabled flag).
     inline constexpr wchar_t CfgKeySoundVolume[]  = L"SoundVolume";
@@ -50,6 +52,8 @@ namespace CfgDefaults
    // Valor sentinela: significa que ainda não existe posição salva.
    inline constexpr int CfgDefaultWindowX = -2147483647;
    inline constexpr int CfgDefaultWindowY = -2147483647;
+    inline constexpr bool CfgDefaultVSync = true;
+    inline constexpr int  CfgDefaultFPSLimit = -1;
 
     inline constexpr int  CfgDefaultSoundVolume = 5;
     inline constexpr int  CfgDefaultMusicVolume = 5;

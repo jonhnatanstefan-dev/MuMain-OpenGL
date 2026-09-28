@@ -59,7 +59,8 @@ void GameConfig::Load()
     m_windowMode   = ReadBool(CfgSectionWindow, CfgKeyWindowed, CfgDefaultWindowed);
     m_windowX = ReadInt(CfgSectionWindow, CfgKeyWindowX, CfgDefaultWindowX);
     m_windowY = ReadInt(CfgSectionWindow, CfgKeyWindowY, CfgDefaultWindowY);
-
+    m_vsync = ReadBool(CfgSectionWindow, CfgKeyVSync, CfgDefaultVSync);
+    m_fpsLimit = ReadInt(CfgSectionWindow, CfgKeyFPSLimit, CfgDefaultFPSLimit);
     m_soundVolume  = ReadInt(CfgSectionAudio, CfgKeySoundVolume, CfgDefaultSoundVolume);
     m_musicVolume  = ReadInt(CfgSectionAudio, CfgKeyMusicVolume, CfgDefaultMusicVolume);
 
@@ -99,7 +100,8 @@ void GameConfig::Save()
     WriteBool(CfgSectionWindow, CfgKeyWindowed, m_windowMode);
     WriteInt(CfgSectionWindow, CfgKeyWindowX, m_windowX);
     WriteInt(CfgSectionWindow, CfgKeyWindowY, m_windowY);
-
+    WriteBool(CfgSectionWindow, CfgKeyVSync, m_vsync);
+    WriteInt(CfgSectionWindow, CfgKeyFPSLimit, m_fpsLimit);
     WriteInt(CfgSectionAudio, CfgKeySoundVolume, m_soundVolume);
     WriteInt(CfgSectionAudio, CfgKeyMusicVolume, m_musicVolume);
 
@@ -129,6 +131,21 @@ void GameConfig::SetWindowPosition(int x, int y)
 void GameConfig::SetWindowMode(bool windowed)
 {
     m_windowMode = windowed;
+}
+
+void GameConfig::SetVSync(bool enabled)
+{
+    m_vsync = enabled;
+}
+
+void GameConfig::SetFPSLimit(int fps)
+{
+    // -1 = ilimitado. Valores positivos abaixo de 25 sao elevados
+    // para a taxa de referencia do motor.
+    if (fps != -1 && fps < 25)
+        fps = 25;
+
+    m_fpsLimit = fps;
 }
 
 void GameConfig::SetSoundVolume(int level)
