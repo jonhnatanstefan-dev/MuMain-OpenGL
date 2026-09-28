@@ -146,6 +146,12 @@ void ReconnectManager::Begin()
     szServerIpAddress = m_serverIp;
     g_ServerPort = m_serverPort;
 
+    // Stop the helper before releasing world/character data. Its periodic
+    // timer keeps running across scenes, so leaving it active here risks
+    // dereferencing data freed by ResetClientToLoginScene().
+    if (m_muHelperWasActive)
+        MUHelper::g_MuHelper.Stop();
+
     // Tear the live session down to a clean login state.
     ResetClientToLoginScene();
 
