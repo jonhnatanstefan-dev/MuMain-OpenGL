@@ -3356,7 +3356,7 @@ void ReceiveDamage(const BYTE* ReceiveBuffer)
 
     int ShieldDamage = ((int)(Data->ShieldDamageH) << 8) + Data->ShieldDamageL;
     if (CharacterAttribute->Shield >= ShieldDamage)
-        CharacterAttribute->Shield = ShieldDamage;
+        CharacterAttribute->Shield -= ShieldDamage;
     else
         CharacterAttribute->Shield = 0;
 }
@@ -3669,31 +3669,24 @@ void ReceiveAttackDamageExtended(const BYTE* ReceiveBuffer)
         MUHelper::g_MuHelper.AddTarget(Key, true);
     }
 
-    if (Data->HealthStatus == 0xFF)
+    const auto normalizeStatus = [](BYTE status)
     {
-        c->HealthStatus = -1;
-    }
-    else if (Data->HealthStatus == 0)
-    {
-        c->HealthStatus = 0;
-    }
-    else
-    {
-        c->HealthStatus = static_cast<float>(Data->HealthStatus) / 250.f;
-    }
+        if (status == 0xFF)
+        {
+            return -1.0f;
+        }
 
-    if (Data->ShieldStatus == 0xFF)
-    {
-        c->ShieldStatus = -1;
-    }
-    else if (Data->ShieldStatus == 0)
-    {
-        c->ShieldStatus = 0;
-    }
-    else
-    {
-        c->ShieldStatus = static_cast<float>(Data->HealthStatus) / 250.f;
-    }
+        if (status == 0)
+        {
+            return 0.0f;
+        }
+
+        const BYTE boundedStatus = (status > 250) ? 250 : status;
+        return static_cast<float>(boundedStatus) / 250.f;
+    };
+
+    c->HealthStatus = normalizeStatus(Data->HealthStatus);
+    c->ShieldStatus = normalizeStatus(Data->ShieldStatus);
 
     if (gMapManager.InChaosCastle())
     {

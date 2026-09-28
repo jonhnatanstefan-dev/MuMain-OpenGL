@@ -7,6 +7,25 @@
 
 using namespace SEASON3B;
 
+namespace
+{
+int GetActiveInventoryExtensionCount()
+{
+    if (CharacterAttribute == nullptr)
+    {
+        return 0;
+    }
+
+    const int count = static_cast<int>(CharacterAttribute->InventoryExtensions);
+    if (count <= 0)
+    {
+        return 0;
+    }
+
+    return (count > MAX_INVENTORY_EXT_COUNT) ? MAX_INVENTORY_EXT_COUNT : count;
+}
+}
+
 CNewUIInventoryExtension::CNewUIInventoryExtension()
 {
     Init();
@@ -93,7 +112,7 @@ bool CNewUIInventoryExtension::UpdateMouseEvent()
     if (g_pNewUISystem->HandleFrameCornerClose(m_Pos, INTERFACE_INVENTORY_EXT))
         return false;
 
-    for (int i = 0; i < CharacterAttribute->InventoryExtensions; i++)
+    for (int i = 0; i < GetActiveInventoryExtensionCount(); i++)
     {
         if (const auto m_extension = m_extensions[i])
         {
@@ -101,12 +120,12 @@ bool CNewUIInventoryExtension::UpdateMouseEvent()
             {
                 return false;
             }
-
-            if (InventoryProcess())
-            {
-                return false;
-            }
         }
+    }
+
+    if (InventoryProcess())
+    {
+        return false;
     }
 
     if (m_BtnExit.UpdateMouseEvent())
@@ -141,9 +160,10 @@ bool CNewUIInventoryExtension::InventoryProcess()
         return false;
     }
 
-    for (auto* extension : m_extensions)
+    for (int i = 0; i < GetActiveInventoryExtensionCount(); ++i)
     {
-        if (extension->CheckPtInRect(MouseX, MouseY))
+        auto* extension = m_extensions[i];
+        if (extension && extension->CheckPtInRect(MouseX, MouseY))
         {
             return g_pMyInventory->HandleInventoryActions(extension);
         }
@@ -164,7 +184,7 @@ bool CNewUIInventoryExtension::UpdateKeyEvent()
 
 bool CNewUIInventoryExtension::Update()
 {
-    for (int i = 0; i < CharacterAttribute->InventoryExtensions; i++)
+    for (int i = 0; i < GetActiveInventoryExtensionCount(); i++)
     {
         if (const auto& extension = m_extensions[i])
         {
@@ -185,7 +205,7 @@ bool CNewUIInventoryExtension::Render()
     RenderFrame();
     RenderTexts();
 
-    for (int i = 0; i < CharacterAttribute->InventoryExtensions; i++)
+    for (int i = 0; i < GetActiveInventoryExtensionCount(); i++)
     {
         if (const auto& m_extension = m_extensions[i])
         {
@@ -210,7 +230,7 @@ void CNewUIInventoryExtension::RenderFrame() const
     RenderImage(IMAGE_NPCSHOP_RIGHT, x + WIDTH - 21, y + 64, 21.f, 320.f);
     RenderImage(IMAGE_NPCSHOP_BOTTOM, x, y + 429 - 45, WIDTH, 45.f);
 
-    for (int i = MAX_INVENTORY_EXT_COUNT - 1; i >= CharacterAttribute->InventoryExtensions; --i)
+    for (int i = MAX_INVENTORY_EXT_COUNT - 1; i >= GetActiveInventoryExtensionCount(); --i)
     {
         RenderImage(IMAGE_EXTENSION_TABLE, x + 11, y + 42 + i * HEIGHT_PER_EXT, 173, HEIGHT_PER_EXT);
         RenderImage(IMAGE_EXTENSION_EMPTY, x + 15, y + 45 + i * HEIGHT_PER_EXT, 161, HEIGHT_PER_EXT - (EXT_BORDER * 2));
@@ -339,7 +359,7 @@ int CNewUIInventoryExtension::FindEmptySlot(int cx, int cy, const CNewUIInventor
         return -1;
     }
 
-    for (int i = 0; i < CharacterAttribute->InventoryExtensions; ++i)
+    for (int i = 0; i < GetActiveInventoryExtensionCount(); ++i)
     {
         auto* extension = m_extensions[i];
         if (extension && extension != excluded)
