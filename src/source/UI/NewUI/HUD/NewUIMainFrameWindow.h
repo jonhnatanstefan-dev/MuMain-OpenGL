@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "UI/NewUI/NewUIBase.h"
 #include "Render/Textures/ZzzTexture.h"
 #include "UI/NewUI/NewUI3DRenderMng.h"
@@ -121,6 +123,7 @@ namespace SEASON3B
         void SetHeroPriorSkill(BYTE bySkill);
 
         void Reset();
+        void LoadHotKeysForCharacter(const wchar_t* characterName);
 
         void SetHotKey(int iHotKey, int iSkillType);
         int GetHotKey(int iHotKey);
@@ -150,6 +153,7 @@ namespace SEASON3B
 
         bool m_bHotKeySkillListUp;
         int m_iHotKeySkillType[SKILLHOTKEY_COUNT];
+        std::wstring m_hotKeyCharacterName;
 
         bool m_bSkillList;
 
@@ -212,6 +216,7 @@ namespace SEASON3B
         void UpdateItemHotKey();
 
         void ResetSkillHotKey();
+        void LoadSkillHotKeys(const wchar_t* characterName);
         void SetSkillHotKey(int iHotKey, int iSkillType);
         int GetSkillHotKey(int iHotKey);
         int GetSkillHotKeyIndex(int iSkillType);
