@@ -3237,16 +3237,21 @@ void MoveHero()
             }
         }
         else if (Success &&
-            ((o->CurrentAction != PLAYER_SHOCK && (o->Teleport != TELEPORT_BEGIN && o->Teleport != TELEPORT && o->Alpha >= 0.7f) &&
-                !Engine::Object::IsAttackAction(o->CurrentAction)
-                && (o->CurrentAction<PLAYER_SKILL_SLEEP || o->CurrentAction>PLAYER_SKILL_LIGHTNING_SHOCK)
-                && o->CurrentAction != PLAYER_RECOVER_SKILL
-                && (o->CurrentAction<PLAYER_SKILL_THRUST || o->CurrentAction>PLAYER_SKILL_HP_UP_OURFORCES))
-                || (o->CurrentAction >= PLAYER_STOP_TWO_HAND_SWORD_TWO && o->CurrentAction <= PLAYER_RUN_TWO_HAND_SWORD_TWO)
-                || (o->CurrentAction >= PLAYER_DARKLORD_STAND && o->CurrentAction <= PLAYER_RUN_RIDE_HORSE)
-                || (o->CurrentAction >= PLAYER_FENRIR_RUN && o->CurrentAction <= PLAYER_FENRIR_WALK_ONE_LEFT)
-                || (o->CurrentAction >= PLAYER_RAGE_FENRIR_WALK && o->CurrentAction <= PLAYER_RAGE_FENRIR_STAND_ONE_LEFT)
-                ))
+            ((
+                SelectedNpc != -1
+                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP)
+                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE)
+                )
+                || ((o->CurrentAction != PLAYER_SHOCK && (o->Teleport != TELEPORT_BEGIN && o->Teleport != TELEPORT && o->Alpha >= 0.7f) &&
+                    !Engine::Object::IsAttackAction(o->CurrentAction)
+                    && (o->CurrentAction<PLAYER_SKILL_SLEEP || o->CurrentAction>PLAYER_SKILL_LIGHTNING_SHOCK)
+                    && o->CurrentAction != PLAYER_RECOVER_SKILL
+                    && (o->CurrentAction<PLAYER_SKILL_THRUST || o->CurrentAction>PLAYER_SKILL_HP_UP_OURFORCES))
+                    || (o->CurrentAction >= PLAYER_STOP_TWO_HAND_SWORD_TWO && o->CurrentAction <= PLAYER_RUN_TWO_HAND_SWORD_TWO)
+                    || (o->CurrentAction >= PLAYER_DARKLORD_STAND && o->CurrentAction <= PLAYER_RUN_RIDE_HORSE)
+                    || (o->CurrentAction >= PLAYER_FENRIR_RUN && o->CurrentAction <= PLAYER_FENRIR_WALK_ONE_LEFT)
+                    || (o->CurrentAction >= PLAYER_RAGE_FENRIR_WALK && o->CurrentAction <= PLAYER_RAGE_FENRIR_STAND_ONE_LEFT)
+                    )))
         {
             int RightType = CharacterMachine->Equipment[EQUIPMENT_WEAPON_RIGHT].Type;
             int LeftType = CharacterMachine->Equipment[EQUIPMENT_WEAPON_LEFT].Type;
@@ -3272,9 +3277,18 @@ void MoveHero()
                 }
             }
             MouseUpdateTime = 0;
+
+            const bool npcInteractionRequested =
+                SelectedNpc != -1
+                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP)
+                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE);
+
             Success = false;
 
-            if (!c->SafeZone)
+            // A direct NPC click must not be reclassified as combat. In the old
+            // flow CheckAttack() ran first, so a click made during/just after an
+            // attack animation could be consumed before the NPC branch.
+            if (!npcInteractionRequested && !c->SafeZone)
             {
                 Success = CheckAttack();
             }
@@ -3328,7 +3342,9 @@ void MoveHero()
                     }
                 }
             }
-            else if (SelectedOperate != -1 && (c->SafeZone || (c->Helper.Type<MODEL_HORN_OF_UNIRIA || c->Helper.Type>MODEL_DARK_HORSE_ITEM || c->Helper.Type != MODEL_HORN_OF_FENRIR)))
+            else if (!npcInteractionRequested
+                && SelectedOperate != -1
+                && (c->SafeZone || (c->Helper.Type<MODEL_HORN_OF_UNIRIA || c->Helper.Type>MODEL_DARK_HORSE_ITEM || c->Helper.Type != MODEL_HORN_OF_FENRIR)))
             {
                 TargetX = (int)(Operates[SelectedOperate].Owner->Position[0] / TERRAIN_SCALE);
                 TargetY = (int)(Operates[SelectedOperate].Owner->Position[1] / TERRAIN_SCALE);
@@ -3346,10 +3362,7 @@ void MoveHero()
                             Action(c, o, true);
                     }
             }
-            else if (SelectedNpc != -1
-                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP)
-                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE)
-                )
+            else if (npcInteractionRequested)
             {
                 // NPC interaction must take priority over MU Helper combat.
                 // Otherwise the helper timer can keep rewriting ActionTarget /
