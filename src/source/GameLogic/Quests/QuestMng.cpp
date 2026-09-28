@@ -34,8 +34,8 @@ namespace
         if (!IsPortugueseClientLocale())
             return;
 
-        // A parte antiga dos diálogos usa QuestWords_<lang>.bmd em runtime,
-        // e algumas entradas do arquivo POR continuam em inglês.
+        // A parte antiga dos diálogos usa QuestWords_<lang>.bmd em runtime.
+        // Algumas entradas do arquivo POR ainda contêm o texto inglês original.
         if (text.find(L"My collection is much more diverse than the ordinary merchants") != std::wstring::npos)
         {
             text = L"Posso ajudar? Minha cole\u00E7\u00E3o \u00E9 muito mais variada que a dos comerciantes comuns. Esse \u00E9 o segredo do meu sucesso, haha.";
@@ -43,6 +43,22 @@ namespace
         else if (text == L"I'm here for your request.")
         {
             text = L"Estou aqui para atender ao seu pedido.";
+        }
+        else if (text == L"There is no available quest. Please come back later.")
+        {
+            text = L"N\u00E3o h\u00E1 nenhuma miss\u00E3o dispon\u00EDvel. Volte mais tarde.";
+        }
+        else if (text == L"Go back.")
+        {
+            text = L"Voltar.";
+        }
+        else if (text == L"Accept the request")
+        {
+            text = L"Aceitar a miss\u00E3o";
+        }
+        else if (text == L"Deny the request")
+        {
+            text = L"Recusar a miss\u00E3o";
         }
     }
 }
@@ -282,10 +298,24 @@ void CQuestMng::SetNPC(int nNPCIndex)
     m_nNPCIndex = nNPCIndex;
     m_szNPCName = getMonsterName(nNPCIndex);
 
-    // The runtime monster-name table may still expose this NPC in English
-    // even though NpcName_Por.txt already contains the Portuguese caption.
-    if (IsPortugueseClientLocale() && nNPCIndex == 568)
-        m_szNPCName = L"Mercador N\u00F4made Zyro";
+    // The runtime monster-name table may still expose a few NPCs in English.
+    if (IsPortugueseClientLocale())
+    {
+        switch (nNPCIndex)
+        {
+        case 568:
+            m_szNPCName = L"Mercador N\u00F4made Zyro";
+            break;
+        case 577:
+            m_szNPCName = L"Leina, Comerciante de Itens Gerais";
+            break;
+        case 578:
+            m_szNPCName = L"Bolo, Comerciante de Armas";
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 int CQuestMng::GetNPCIndex()

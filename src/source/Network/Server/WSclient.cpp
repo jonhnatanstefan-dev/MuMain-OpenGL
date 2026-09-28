@@ -102,6 +102,57 @@ namespace
 
         std::wstring localized(text);
 
+        const auto setExact = [&localized](const wchar_t* source, const wchar_t* target)
+        {
+            if (localized != source)
+                return false;
+
+            localized = target;
+            return true;
+        };
+
+        const auto replaceSuffix = [&localized](const wchar_t* suffix, const wchar_t* replacement)
+        {
+            const std::wstring suffixText(suffix);
+            if (localized.size() < suffixText.size()
+                || localized.compare(localized.size() - suffixText.size(), suffixText.size(), suffixText) != 0)
+                return false;
+
+            localized.replace(localized.size() - suffixText.size(), suffixText.size(), replacement);
+            return true;
+        };
+
+        const auto translateEntrance = [&localized](const wchar_t* englishName, const wchar_t* displayName)
+        {
+            const std::wstring openPrefix = std::wstring(englishName) + L" entrance is open and closes in ";
+            const std::wstring openSuffix = L" minute(s).";
+            if (localized.size() > openPrefix.size() + openSuffix.size()
+                && localized.compare(0, openPrefix.size(), openPrefix) == 0
+                && localized.compare(localized.size() - openSuffix.size(), openSuffix.size(), openSuffix) == 0)
+            {
+                const std::wstring minutes = localized.substr(
+                    openPrefix.size(),
+                    localized.size() - openPrefix.size() - openSuffix.size());
+                localized = L"A entrada do ";
+                localized += displayName;
+                localized += L" est\u00E1 aberta e fecha em ";
+                localized += minutes;
+                localized += L" minuto(s).";
+                return true;
+            }
+
+            const std::wstring closed = std::wstring(englishName) + L" entrance closed.";
+            if (localized == closed)
+            {
+                localized = L"Entrada do ";
+                localized += displayName;
+                localized += L" fechada.";
+                return true;
+            }
+
+            return false;
+        };
+
         const bool isHappyHour =
             localized.find(L"Happy Hour Event") != std::wstring::npos
             || localized.find(L"Happy Hour event") != std::wstring::npos;
@@ -111,29 +162,130 @@ namespace
             localized = L"Evento Happy Hour iniciado!";
         }
         else if (isHappyHour
-            && (localized.find(L"has been ended") != std::wstring::npos
+            && (localized.find(L"has ended") != std::wstring::npos
+                || localized.find(L"has been ended") != std::wstring::npos
                 || localized.find(L"has been finished") != std::wstring::npos
                 || localized.find(L"has been stopped") != std::wstring::npos))
         {
             localized = L"Evento Happy Hour encerrado!";
         }
+        else if (translateEntrance(L"Chaos Castle", L"Chaos Castle")
+            || translateEntrance(L"Blood Castle", L"Blood Castle")
+            || translateEntrance(L"Devil Square", L"Devil Square")
+            || translateEntrance(L"Kanturu Refinery Tower", L"Torre de Refino de Kanturu"))
+        {
+            // translated by translateEntrance
+        }
+        else if (setExact(L"Maya rises from the depths of the Refinery Tower!",
+            L"Maya surge das profundezas da Torre de Refino!")
+            || setExact(L"Phase 1: Defeat the monsters to unseal Maya's power!",
+                L"Fase 1: Derrote os monstros para liberar o poder de Maya!")
+            || setExact(L"Maya (Left Hand) has appeared! Destroy her!",
+                L"Maya (M\u00E3o Esquerda) apareceu! Destrua-a!")
+            || setExact(L"Phase 1 cleared! Phase 2 begins in 2 minutes...",
+                L"Fase 1 conclu\u00EDda! A Fase 2 come\u00E7a em 2 minutos...")
+            || setExact(L"Phase 2: More of Maya's minions have arrived!",
+                L"Fase 2: Mais servos de Maya chegaram!")
+            || setExact(L"Maya (Right Hand) has appeared! Destroy her!",
+                L"Maya (M\u00E3o Direita) apareceu! Destrua-a!")
+            || setExact(L"Phase 2 cleared! Phase 3 begins in 2 minutes...",
+                L"Fase 2 conclu\u00EDda! A Fase 3 come\u00E7a em 2 minutos...")
+            || setExact(L"Phase 3: The final wave approaches!",
+                L"Fase 3: A onda final se aproxima!")
+            || setExact(L"Both hands of Maya have appeared! Defeat them both!",
+                L"As duas m\u00E3os de Maya apareceram! Derrote ambas!")
+            || setExact(L"NIGHTMARE has appeared! Defeat him to claim victory!",
+                L"NIGHTMARE apareceu! Derrote-o para conquistar a vit\u00F3ria!")
+            || setExact(L"Nightmare has teleported! He recovers his full strength!",
+                L"Nightmare se teleportou! Ele recuperou toda a for\u00E7a!")
+            || setExact(L"Nightmare teleports again! He is more powerful than ever!",
+                L"Nightmare se teleporta novamente! Ele est\u00E1 mais poderoso do que nunca!")
+            || setExact(L"Nightmare is at his last stand! Finish him!",
+                L"Nightmare est\u00E1 em sua resist\u00EAncia final! Derrote-o!")
+            || setExact(L"Nightmare has been defeated! The Kanturu Refinery Tower is yours!",
+                L"Nightmare foi derrotado! A Torre de Refino de Kanturu foi conquistada!")
+            || setExact(L"The barrier opens — the tower awaits!",
+                L"A barreira se abriu — a torre aguarda!")
+            || setExact(L"The Kanturu Refinery Tower is conquered! The tower is now open.",
+                L"A Torre de Refino de Kanturu foi conquistada! A torre est\u00E1 aberta.")
+            || setExact(L"The Kanturu Tower closes in 5 minutes!",
+                L"A Torre de Kanturu fecha em 5 minutos!")
+            || setExact(L"The Kanturu Tower has closed.",
+                L"A Torre de Kanturu foi fechada.")
+            || setExact(L"The Kanturu Event has ended. Better luck next time!",
+                L"O evento de Kanturu terminou. Boa sorte na pr\u00F3xima!")
+            || setExact(L"The Ice Walker appeared! Kill it within one minute, or the following monsters become stronger.",
+                L"O Ice Walker apareceu! Derrote-o em um minuto ou os pr\u00F3ximos monstros ficar\u00E3o mais fortes.")
+            || setExact(L"The Ice Walker escaped! The following monsters are stronger.",
+                L"O Ice Walker escapou! Os pr\u00F3ximos monstros est\u00E3o mais fortes.")
+            || setExact(L"The Ice Walker has been defeated!",
+                L"O Ice Walker foi derrotado!")
+            || setExact(L"The Hatchery Gate is closed.",
+                L"O port\u00E3o do Hatchery est\u00E1 fechado.")
+            || setExact(L"The Hatchery Gate is closed, you cannot enter.",
+                L"O port\u00E3o do Hatchery est\u00E1 fechado; voc\u00EA n\u00E3o pode entrar.")
+            || setExact(L"The Hatchery Gate is opened.",
+                L"O port\u00E3o do Hatchery est\u00E1 aberto.")
+            || setExact(L"MU Helper is already running.",
+                L"O MU Helper j\u00E1 est\u00E1 em execu\u00E7\u00E3o.")
+            || setExact(L"MU Helper is disabled",
+                L"O MU Helper est\u00E1 desativado.")
+            || setExact(L"The vault is locked.",
+                L"O ba\u00FA est\u00E1 bloqueado.")
+            || setExact(L"This item can't be dropped.",
+                L"Este item n\u00E3o pode ser descartado.")
+            || setExact(L"This item can't be repaired.",
+                L"Este item n\u00E3o pode ser reparado.")
+            || setExact(L"This item can't be sold.",
+                L"Este item n\u00E3o pode ser vendido.")
+            || setExact(L"This item can't be stored in the vault.",
+                L"Este item n\u00E3o pode ser armazenado no ba\u00FA.")
+            || setExact(L"This item can't be traded.",
+                L"Este item n\u00E3o pode ser negociado.")
+            || setExact(L"A party is not possible during this event.",
+                L"N\u00E3o \u00E9 poss\u00EDvel criar grupo durante este evento.")
+            || setExact(L"You are not the Party Master.",
+                L"Voc\u00EA n\u00E3o \u00E9 o l\u00EDder do grupo.")
+            || setExact(L"Trade partner not found.",
+                L"Parceiro de troca n\u00E3o encontrado.")
+            || setExact(L"Your level is too low to enter this map.",
+                L"Seu n\u00EDvel \u00E9 muito baixo para entrar neste mapa.")
+            || setExact(L"Reset is not enabled.",
+                L"O reset n\u00E3o est\u00E1 habilitado.")
+            || setExact(L"Reset is not configured.",
+                L"O reset n\u00E3o est\u00E1 configurado.")
+            || setExact(L"Cannot do reset with any windows opened.",
+                L"N\u00E3o \u00E9 poss\u00EDvel resetar com janelas abertas.")
+            || setExact(L"You are already in a duel.",
+                L"Voc\u00EA j\u00E1 est\u00E1 em um duelo.")
+            || setExact(L"The duel channel is full.",
+                L"O canal de duelo est\u00E1 cheio.")
+            || setExact(L"This event is not implemented yet.",
+                L"Este evento ainda n\u00E3o foi implementado."))
+        {
+            // translated by exact server-message table
+        }
         else
         {
-            const auto replaceSuffix = [&localized](const wchar_t* suffix, const wchar_t* replacement)
-            {
-                const std::wstring suffixText(suffix);
-                if (localized.size() < suffixText.size()
-                    || localized.compare(localized.size() - suffixText.size(), suffixText.size(), suffixText) != 0)
-                    return false;
-
-                localized.replace(localized.size() - suffixText.size(), suffixText.size(), replacement);
-                return true;
-            };
-
             if (!replaceSuffix(L" entered the game.", L" entrou no jogo."))
                 if (!replaceSuffix(L" entered the game", L" entrou no jogo"))
                     if (!replaceSuffix(L" left the game.", L" saiu do jogo."))
                         replaceSuffix(L" left the game", L" saiu do jogo");
+        }
+
+        // Raklion messages with runtime values.
+        const std::wstring selupanPrefix = L"Selupan has appeared. The Hatchery Gates will be closed in ";
+        const std::wstring selupanSuffix = L" minute(s).";
+        if (localized.compare(0, selupanPrefix.size(), selupanPrefix) == 0
+            && localized.size() > selupanPrefix.size() + selupanSuffix.size()
+            && localized.compare(localized.size() - selupanSuffix.size(), selupanSuffix.size(), selupanSuffix) == 0)
+        {
+            const std::wstring minutes = localized.substr(
+                selupanPrefix.size(),
+                localized.size() - selupanPrefix.size() - selupanSuffix.size());
+            localized = L"Selupan apareceu. Os port\u00F5es do Hatchery fechar\u00E3o em ";
+            localized += minutes;
+            localized += L" minuto(s).";
         }
 
         ::wcsncpy(text, localized.c_str(), capacity - 1);
