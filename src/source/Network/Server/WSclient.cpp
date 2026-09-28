@@ -3345,6 +3345,12 @@ void ReceiveDeleteCharacterViewport(const BYTE* ReceiveBuffer)
 }
 int AttackPlayer = 0;
 
+static int ClampExtendedDamageForVisuals(const DWORD damage)
+{
+    const DWORD maxVisualDamage = static_cast<DWORD>(std::numeric_limits<int>::max());
+    return static_cast<int>(damage > maxVisualDamage ? maxVisualDamage : damage);
+}
+
 void ReceiveDamage(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_DAMAGE)ReceiveBuffer;
@@ -3361,10 +3367,12 @@ void ReceiveDamage(const BYTE* ReceiveBuffer)
         CharacterAttribute->Shield = 0;
 }
 
-void ReceiveAttackDamageCastle(CHARACTER* c, OBJECT* o, const bool success, const int key, const int damage, const int shieldDamage, const int damageType, const bool bRepeatedly, const bool bEndRepeatedly, const bool bDoubleEnable, const bool bComboEnable)
+void ReceiveAttackDamageCastle(CHARACTER* c, OBJECT* o, const bool success, const int key, const DWORD damage, const DWORD shieldDamage, const int damageType, const bool bRepeatedly, const bool bEndRepeatedly, const bool bDoubleEnable, const bool bComboEnable)
 {
+    const int visualDamage = ClampExtendedDamageForVisuals(damage);
+    const uint64_t accumDamage = static_cast<uint64_t>(shieldDamage) + static_cast<uint64_t>(damage);
+
     vec3_t Light;
-    int accumDamage = shieldDamage + damage;
     int	rstDamage = -1;
     float rstScale = 0.8f;
     Vector(0.5f, 0.5f, 0.5f, Light);
@@ -3399,7 +3407,7 @@ void ReceiveAttackDamageCastle(CHARACTER* c, OBJECT* o, const bool success, cons
 
     if (success)
     {
-        SetPlayerShock(c, damage);
+        SetPlayerShock(c, visualDamage);
         Vector(1.f, 0.f, 0.f, Light);
         if (key == HeroKey)
         {
@@ -3451,7 +3459,7 @@ void ReceiveAttackDamageCastle(CHARACTER* c, OBJECT* o, const bool success, cons
             if (c->MonsterIndex != MONSTER_ILLUSION_OF_KUNDUN_7
                 && rand_fps_check(2))
             {
-                SetPlayerShock(c, damage);
+                SetPlayerShock(c, visualDamage);
             }
         }
 
@@ -3463,18 +3471,21 @@ void ReceiveAttackDamageCastle(CHARACTER* c, OBJECT* o, const bool success, cons
         CreatePoint(o->Position, rstDamage, Light, rstScale);
     }
 
-    c->Hit = damage;
+    c->Hit = visualDamage;
 }
 
-void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int key, const int damage, const int shieldDamage, const int damageType, const bool bRepeatedly, const bool bEndRepeatedly, const bool bDoubleEnable, const bool bComboEnable)
+void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int key, const DWORD damage, const DWORD shieldDamage, const int damageType, const bool bRepeatedly, const bool bEndRepeatedly, const bool bDoubleEnable, const bool bComboEnable)
 {
+    const int visualDamage = ClampExtendedDamageForVisuals(damage);
+    const int visualShieldDamage = ClampExtendedDamageForVisuals(shieldDamage);
+
     vec3_t Light;
     if (success)
     {
-        SetPlayerShock(c, damage);
+        SetPlayerShock(c, visualDamage);
         Vector(1.f, 0.f, 0.f, Light);
 
-        CreatePoint(o->Position, damage, Light);
+        CreatePoint(o->Position, visualDamage, Light);
 
         if (shieldDamage > 0)
         {
@@ -3482,7 +3493,7 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
             Vector(0.8f, 1.f, 0.f, Light);
             nPosShieldDamage[0] = o->Position[0]; nPosShieldDamage[1] = o->Position[1];
             nPosShieldDamage[2] = o->Position[2] + 25.f;
-            CreatePoint(nPosShieldDamage, shieldDamage, Light);
+            CreatePoint(nPosShieldDamage, visualShieldDamage, Light);
         }
 
         if (key == HeroKey)
@@ -3529,7 +3540,7 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
             if (c->MonsterIndex != MONSTER_ILLUSION_OF_KUNDUN_7
                 && rand_fps_check(2))
             {
-                SetPlayerShock(c, damage);
+                SetPlayerShock(c, visualDamage);
             }
         }
         float scale = 15.f;
@@ -3592,7 +3603,7 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
 
         if (bRepeatedly || bEndRepeatedly)
         {
-            g_CMonkSystem.SetRepeatedly(damage, damageType, bDoubleEnable, bEndRepeatedly);
+            g_CMonkSystem.SetRepeatedly(visualDamage, damageType, bDoubleEnable, bEndRepeatedly);
             if (bEndRepeatedly)
             {
                 g_CMonkSystem.RenderRepeatedly(key, o);
@@ -3607,22 +3618,22 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
                 vec3_t Position, Light2;
                 VectorCopy(o->Position, Position);
                 Vector(Light[0] - 0.4f, Light[1] - 0.4f, Light[2] - 0.4f, Light2);
-                CreatePoint(Position, damage, Light2, scale);
+                CreatePoint(Position, visualDamage, Light2, scale);
                 Position[2] += 10.f;
                 Vector(Light[0] - 0.2f, Light[1] - 0.2f, Light[2] - 0.2f, Light2);
-                CreatePoint(Position, damage, Light2, scale + 5.f);
+                CreatePoint(Position, visualDamage, Light2, scale + 5.f);
                 Position[2] += 10.f;
-                CreatePoint(Position, damage, Light, scale + 10.f);
+                CreatePoint(Position, visualDamage, Light, scale + 10.f);
             }
             else if (bDoubleEnable)    //  Double Damage
             {
                 vec3_t Position, Light2;
                 VectorCopy(o->Position, Position);
                 Vector(Light[0] - 0.4f, Light[1] - 0.4f, Light[2] - 0.4f, Light2);
-                CreatePoint(Position, damage, Light2, scale);
+                CreatePoint(Position, visualDamage, Light2, scale);
                 Position[2] += 10.f;
                 Vector(Light[0] - 0.2f, Light[1] - 0.2f, Light[2] - 0.2f, Light2);
-                CreatePoint(Position, damage, Light2, scale + 5.f);
+                CreatePoint(Position, visualDamage, Light2, scale + 5.f);
             }
 
             CreatePoint(o->Position, damage, Light, scale);
@@ -3634,12 +3645,12 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
             Vector(0.8f, 1.f, 0.f, Light);
             nPosShieldDamage[0] = o->Position[0]; nPosShieldDamage[1] = o->Position[1];
             nPosShieldDamage[2] = o->Position[2] + 25.f;
-            CreatePoint(nPosShieldDamage, shieldDamage, Light);
+            CreatePoint(nPosShieldDamage, visualShieldDamage, Light);
         }
     }
-    c->Hit = damage;
+    c->Hit = visualDamage;
 
-    g_ConsoleDebug->Write(MCD_RECEIVE, L"0x15 [ReceiveAttackDamage(%d %d)]", AttackPlayer, damage);
+    g_ConsoleDebug->Write(MCD_RECEIVE, L"0x15 [ReceiveAttackDamage(%d %u)]", AttackPlayer, static_cast<unsigned>(damage));
 }
 
 void ReceiveAttackDamageExtended(const BYTE* ReceiveBuffer)
@@ -3654,16 +3665,17 @@ void ReceiveAttackDamageExtended(const BYTE* ReceiveBuffer)
     CHARACTER* c = &CharactersClient[Index];
     OBJECT* o = &c->Object;
     
-    auto Damage = Data->HealthDamage;
+    const DWORD Damage = Data->HealthDamage;
     // DamageType
     int	 DamageType = (Data->DamageType) & 0x0f;
     bool bRepeatedly = (Data->DamageType >> 4) & 0x01;
     bool bEndRepeatedly = (Data->DamageType >> 5) & 0x01;
     bool bDoubleEnable = (Data->DamageType >> 6) & 0x01;
     bool bComboEnable = (Data->DamageType >> 7) & 0x01;
-    auto ShieldDamage = Data->ShieldDamage;
+    const DWORD ShieldDamage = Data->ShieldDamage;
 
-    g_ConsoleDebug->Write(MCD_RECEIVE, L"0x15 [ReceiveAttackDamageExtended(%d %d)]", AttackPlayer, Damage);
+    g_ConsoleDebug->Write(MCD_RECEIVE, L"0x15 [ReceiveAttackDamageExtended(%d %u)]",
+        AttackPlayer, static_cast<unsigned>(Damage));
     if (IsMonster(c))
     {
         MUHelper::g_MuHelper.AddTarget(Key, true);
@@ -5901,11 +5913,12 @@ BOOL ReceiveDieExpLarge(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 {
     auto Data = (LPPRECEIVE_EXP_EXTENDED)ReceiveBuffer;
 
-    auto addedExperience = Data->AddedExperience;
-    auto damageOfLastHit = Data->DamageOfLastHit;
-    auto experienceType = Data->ExperienceType;
-    auto killedId = Data->KilledObjectId;
-    auto killerId = Data->KillerObjectId;
+    const DWORD addedExperience = Data->AddedExperience;
+    const DWORD damageOfLastHit = Data->DamageOfLastHit;
+    const BYTE experienceType = Data->ExperienceType;
+    const WORD killedId = Data->KilledObjectId;
+    const WORD killerId = Data->KillerObjectId;
+    const int visualDamageOfLastHit = ClampExtendedDamageForVisuals(damageOfLastHit);
 
     int Index = FindCharacterIndex(killedId);
     CHARACTER* killedObject = &CharactersClient[Index];
@@ -5915,7 +5928,7 @@ BOOL ReceiveDieExpLarge(const BYTE* ReceiveBuffer, BOOL bEncrypted)
     if (Hero->Key == killerId)
     {
         Hero->AttackFlag = ATTACK_DIE;
-        Hero->Damage = damageOfLastHit;
+        Hero->Damage = visualDamageOfLastHit;
         Hero->TargetCharacter = Index;
     }
     else
@@ -5926,7 +5939,7 @@ BOOL ReceiveDieExpLarge(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 
     if (damageOfLastHit > 0)
     {
-        CreatePoint(o->Position, damageOfLastHit, Light);
+        CreatePoint(o->Position, visualDamageOfLastHit, Light);
     }
 
     killedObject->Dead = 1;
