@@ -1293,6 +1293,14 @@ BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer)
     CharacterAttribute->wMaxMinusPoint = Data->wMaxMinusPoint;
     CharacterAttribute->InventoryExtensions = Data->InventoryExtensions;
     CharacterAttribute->Resets = Data->Resets;
+
+    // These fields are not part of the stock join packet. Clear them on every
+    // character entry so values can never leak from the previous character.
+    CharacterAttribute->GrandResets = 0;
+    CharacterAttribute->VipLevel = 0;
+    CharacterAttribute->VipRemainingSeconds = 0;
+    CharacterAttribute->ProgressionInfoAvailable = false;
+
     CharacterAttribute->AttackSpeed = Data->AttackSpeed;
     CharacterAttribute->MagicSpeed = Data->MagicSpeed;
     CharacterAttribute->MaxAttackSpeed = Data->MaxAttackSpeed;
@@ -1418,6 +1426,30 @@ BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x03 [ReceiveJoinMapServer]");
 
     return (TRUE);
+}
+
+void ReceiveProgressionStatus(const std::span<const BYTE> ReceiveBuffer)
+{
+    auto const Data = safe_cast<PRECEIVE_PROGRESSION_STATUS>(
+        ReceiveBuffer, "PRECEIVE_PROGRESSION_STATUS");
+    if (Data == nullptr)
+    {
+        return;
+    }
+
+    CharacterAttribute->Resets = Data->Resets;
+    CharacterAttribute->GrandResets = Data->GrandResets;
+    CharacterAttribute->VipLevel = Data->VipLevel;
+    CharacterAttribute->VipRemainingSeconds = Data->VipRemainingSeconds;
+    CharacterAttribute->ProgressionInfoAvailable = true;
+
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0xF3/0x60 [Progression] Reset:%u GrandReset:%u VIP:%u Remaining:%u",
+        static_cast<unsigned>(Data->Resets),
+        static_cast<unsigned>(Data->GrandResets),
+        static_cast<unsigned>(Data->VipLevel),
+        static_cast<unsigned>(Data->VipRemainingSeconds));
 }
 
 void ReceiveRevival(const BYTE* ReceiveBuffer)
@@ -13617,6 +13649,9 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             break;
         case 0x53:
             Receive_Master_SetSkillList((PMSG_MASTER_SKILL_LIST_SEND*)ReceiveBuffer);
+            break;
+        case CUSTOM_PROGRESSION_STATUS_SUBCODE:
+            ReceiveProgressionStatus(received_span);
             break;
         }
         break;

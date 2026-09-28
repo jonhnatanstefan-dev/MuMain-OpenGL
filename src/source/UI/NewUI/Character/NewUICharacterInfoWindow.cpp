@@ -166,6 +166,18 @@ bool SEASON3B::CNewUICharacterInfoWindow::BtnProcess()
     if (g_pNewUISystem->HandleFrameCornerClose(m_Pos, SEASON3B::INTERFACE_CHARACTER))
         return true;
 
+    // Item 18 - Reset: the server remains authoritative for requirements,
+    // costs and rewards. Clicking the small info marker asks OpenMU for the
+    // configured values through its existing /resetinfo command.
+    if (IsRelease(VK_LBUTTON)
+        && CheckMouseIn(m_Pos.x + 160, m_Pos.y + 54, 16, 16)
+        && SocketClient != nullptr)
+    {
+        SocketClient->ToGameServer()->SendPublicChatMessage(Hero->ID, L"/resetinfo");
+        PlayBuffer(SOUND_CLICK01);
+        return true;
+    }
+
     if (CharacterAttribute->LevelUpPoint > 0)
     {
         int iBaseClass = gCharacterManager.GetBaseClass(Hero->Class);
@@ -330,7 +342,21 @@ void SEASON3B::CNewUICharacterInfoWindow::RenderTableTexts()
     wchar_t strExp[128];
     wchar_t strPoint[128];
 
-    mu_swprintf(strLevel, I18N::Game::LevelUResetsU, CharacterAttribute->Level, CharacterAttribute->Resets);
+    if (CharacterAttribute->ProgressionInfoAvailable)
+    {
+        mu_swprintf(
+            strLevel,
+            L"Lv %u | R %u | GR %u | VIP %u",
+            static_cast<unsigned>(CharacterAttribute->Level),
+            static_cast<unsigned>(CharacterAttribute->Resets),
+            static_cast<unsigned>(CharacterAttribute->GrandResets),
+            static_cast<unsigned>(CharacterAttribute->VipLevel));
+    }
+    else
+    {
+        mu_swprintf(strLevel, I18N::Game::LevelUResetsU, CharacterAttribute->Level, CharacterAttribute->Resets);
+    }
+
     mu_swprintf(strExp, I18N::Game::EXPI64dI64d, CharacterAttribute->Experience, CharacterAttribute->NextExperience);
 
     if (CharacterAttribute->Level > 9)
@@ -360,6 +386,10 @@ void SEASON3B::CNewUICharacterInfoWindow::RenderTableTexts()
     g_pRenderText->SetTextColor(230, 230, 0, 255);
     g_pRenderText->SetBgColor(0, 0, 0, 0);
     g_pRenderText->RenderText(m_Pos.x + 18, m_Pos.y + 58, strLevel);
+
+    g_pRenderText->SetFont(g_hFontBold);
+    g_pRenderText->SetTextColor(76, 197, 254, 255);
+    g_pRenderText->RenderText(m_Pos.x + 164, m_Pos.y + 58, L"i");
 
     if (CharacterAttribute->LevelUpPoint > 0)
     {

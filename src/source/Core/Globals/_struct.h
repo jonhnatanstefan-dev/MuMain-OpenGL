@@ -346,6 +346,13 @@ typedef struct
     WORD Level;
     DWORD Resets;
 
+    // Optional custom progression state. The stock OpenMU join packet supplies
+    // Resets; the F3/60 extension fills Grand Reset and VIP data when supported.
+    DWORD GrandResets;
+    BYTE VipLevel;
+    DWORD VipRemainingSeconds;
+    bool ProgressionInfoAvailable;
+
     WORD Strength;
     WORD Dexterity;
     WORD Vitality;

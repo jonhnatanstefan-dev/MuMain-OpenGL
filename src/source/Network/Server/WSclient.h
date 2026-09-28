@@ -396,6 +396,21 @@ typedef struct
 } PRECEIVE_JOIN_MAP_SERVER_EXTENDED, * LPPRECEIVE_JOIN_MAP_SERVER_EXTENDED;
 #pragma pack(pop)
 
+// Optional custom progression status. Existing OpenMU servers never send it,
+// so adding this contract does not change the stock protocol.
+constexpr BYTE CUSTOM_PROGRESSION_STATUS_SUBCODE = 0x60;
+#pragma pack(push, 1)
+typedef struct
+{
+    PBMSG_HEADER Header;
+    BYTE         SubCode;
+    DWORD        Resets;
+    DWORD        GrandResets;
+    BYTE         VipLevel;
+    DWORD        VipRemainingSeconds;
+} PRECEIVE_PROGRESSION_STATUS, * LPPRECEIVE_PROGRESSION_STATUS;
+#pragma pack(pop)
+
 #pragma pack(push, 1)
 typedef struct
 {
