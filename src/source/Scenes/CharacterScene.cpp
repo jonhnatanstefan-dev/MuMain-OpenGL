@@ -418,6 +418,9 @@ bool NewRenderCharacterScene(HDC hDC)
         g_pOption->UpdateKeyEvent();
         BeginBitmap();
         g_pOption->Render();
+
+        // Keep the cursor above the NewUI option window in pre-game scenes.
+        RenderCursor();
         EndBitmap();
     }
 

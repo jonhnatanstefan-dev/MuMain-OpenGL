@@ -50,6 +50,7 @@ bool& EnableMainRender = g_sceneInit.GetEnableMainRender();
 #include "GameLogic/Items/PersonalShopTitleImp.h"
 #include "GameLogic/Items/CComGem.h"
 #include "UI/Legacy/UIMng.h"
+#include "UI/NewUI/NewUISystem.h"
 
 // External variable declarations (defined in ZzzScene.cpp or other files)
 extern wchar_t AbuseFilter[][20];
@@ -279,7 +280,8 @@ void RenderInfomation()
 
     CUIMng::Instance().Render();
 
-    if (SceneFlag == LOG_IN_SCENE || SceneFlag == CHARACTER_SCENE)
+    if ((SceneFlag == LOG_IN_SCENE || SceneFlag == CHARACTER_SCENE)
+        && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_OPTION))
     {
         RenderCursor();
     }

@@ -475,6 +475,11 @@ bool NewRenderLogInScene(HDC hDC)
         g_pOption->UpdateMouseEvent();
         g_pOption->UpdateKeyEvent();
         g_pOption->Render();
+
+        // In pre-game scenes RenderInfomation() runs before the NewUI option
+        // window. Draw the software cursor after the option window so it stays
+        // visible on top, matching the in-game render order.
+        RenderCursor();
     }
 
     EndBitmap();
