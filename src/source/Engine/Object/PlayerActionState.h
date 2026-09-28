@@ -4,15 +4,38 @@
 
 namespace Engine::Object
 {
-    // True while a player's action is one of the attack/skill swing animations
-    // (PLAYER_ATTACK_FIST .. PLAYER_RIDE_SKILL). The swing animation's playback
-    // speed scales with AttackSpeed (see SetAttackSpeed in ZzzCharacter.cpp), so
-    // this predicate doubles as the natural attack-cadence gate: hold off the
-    // next action until the current swing finishes, and the rate follows attack
-    // speed instead of any fixed timer.
+    // True only for actual attack/skill animations.
+    //
+    // Do not use one broad PLAYER_ATTACK_FIST..PLAYER_RIDE_SKILL range here:
+    // that numeric span also contains Dark Horse/Fenrir stand, run, walk and
+    // damage animations. Treating a mounted idle pose as an attack makes the
+    // MU Helper believe a swing is permanently in progress and it never fires.
     inline bool IsAttackAction(int currentAction)
     {
-        return currentAction >= PLAYER_ATTACK_FIST && currentAction <= PLAYER_RIDE_SKILL;
+        if (currentAction >= PLAYER_ATTACK_FIST && currentAction < PLAYER_ATTACK_END)
+            return true;
+
+        if (currentAction >= PLAYER_ATTACK_STRIKE && currentAction <= PLAYER_ATTACK_DARKHORSE)
+            return true;
+
+        if (currentAction >= PLAYER_FENRIR_ATTACK && currentAction <= PLAYER_FENRIR_SKILL_ONE_LEFT)
+            return true;
+
+        if (currentAction >= PLAYER_ATTACK_BOW_UP && currentAction <= PLAYER_HIGH_SHOCK)
+            return true;
+
+        if (currentAction == PLAYER_ATTACK_TWO_HAND_SWORD_TWO)
+            return true;
+
+        if (currentAction >= PLAYER_SKILL_HAND1 && currentAction <= PLAYER_RIDE_SKILL)
+            return true;
+
+        if (currentAction == PLAYER_RAGE_UNI_ATTACK ||
+            currentAction == PLAYER_RAGE_UNI_ATTACK_ONE_RIGHT ||
+            currentAction == PLAYER_RAGE_FENRIR_ATTACK_RIGHT)
+            return true;
+
+        return false;
     }
 
     // True while a player is sitting or holding a pose (PLAYER_SIT1 ..
