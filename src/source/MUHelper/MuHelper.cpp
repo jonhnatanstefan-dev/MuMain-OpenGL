@@ -841,6 +841,10 @@ namespace MUHelper
         return 1;
     }
 
+    // Forward declaration: Attack() may consult the swing state before the
+    // helper implementation below is reached in this translation unit.
+    static bool IsHeroSwingInProgress();
+
     int CMuHelper::Attack()
     {
         if (m_iCurrentTarget == -1)
