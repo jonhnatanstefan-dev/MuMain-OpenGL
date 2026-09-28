@@ -125,7 +125,7 @@ namespace SEASON3B
         void Reset();
         void LoadHotKeysForCharacter(const wchar_t* characterName);
 
-        void SetHotKey(int iHotKey, int iSkillType);
+        void SetHotKey(int iHotKey, int iSkillType, bool persist = true);
         int GetHotKey(int iHotKey);
         int GetSkillIndex(int iSkillType);
         void RenderCurrentSkillAndHotSkillList();
@@ -217,7 +217,7 @@ namespace SEASON3B
 
         void ResetSkillHotKey();
         void LoadSkillHotKeys(const wchar_t* characterName);
-        void SetSkillHotKey(int iHotKey, int iSkillType);
+        void SetSkillHotKey(int iHotKey, int iSkillType, bool persist = true);
         int GetSkillHotKey(int iHotKey);
         int GetSkillHotKeyIndex(int iSkillType);
 
