@@ -3013,7 +3013,16 @@ void MoveHero()
     if (c->Object.Live == 0)
         return;
 
-    if (HandleHeroPositionSlide(c))
+    // NPC interaction is edge-triggered by the fresh left-click, not merely by
+    // hovering an NPC. Keep this before the attack-slide early return so a click
+    // made just after a skill/attack is not silently discarded.
+    const bool directNpcClick =
+        MouseLButtonPush
+        && SelectedNpc != -1
+        && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP)
+        && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE);
+
+    if (!directNpcClick && HandleHeroPositionSlide(c))
     {
         return;
     }
@@ -3175,9 +3184,18 @@ void MoveHero()
     if (!MouseOnWindow && false == g_pNewUISystem->CheckMouseUse())
     {
         bool Success = false;
-        if (MouseUpdateTime >= MouseUpdateTimeMax && !s_bIgnoreHeldClickAfterNpcTalk)
+        if (!s_bIgnoreHeldClickAfterNpcTalk
+            && (directNpcClick || MouseUpdateTime >= MouseUpdateTimeMax))
         {
-            if (!EnableFastInput)
+            if (directNpcClick)
+            {
+                // Consume exactly the fresh click which selected the NPC. This
+                // bypasses the generic world-input debounce, which otherwise
+                // drops clicks for several frames after attack/movement actions.
+                MouseLButtonPush = false;
+                Success = true;
+            }
+            else if (!EnableFastInput)
             {
                 if (MouseLButtonPush)
                 {
@@ -3197,25 +3215,25 @@ void MoveHero()
                 {
                     Success = true;
                 }
+            }
 
-                if (Success && !g_isCharacterBuff(o, eDeBuff_Stun) && !g_isCharacterBuff(o, eDeBuff_Sleep))
+            if (Success && !g_isCharacterBuff(o, eDeBuff_Stun) && !g_isCharacterBuff(o, eDeBuff_Sleep))
+            {
+                g_iFollowCharacter = -1;
+
+                LButtonPressTime = ((WorldTime - LButtonPopTime) / CLOCKS_PER_SEC);
+
+                if (LButtonPressTime >= AutoMouseLimitTime)
                 {
-                    g_iFollowCharacter = -1;
-
-                    LButtonPressTime = ((WorldTime - LButtonPopTime) / CLOCKS_PER_SEC);
-
-                    if (LButtonPressTime >= AutoMouseLimitTime)
-                    {
-                        MouseLButtonPush = false;
-                        MouseLButton = false;
-                        Success = FALSE;
-                    }
+                    MouseLButtonPush = false;
+                    MouseLButton = false;
+                    Success = FALSE;
                 }
-                else
-                {
-                    LButtonPopTime = WorldTime;
-                    LButtonPressTime = 0.f;
-                }
+            }
+            else
+            {
+                LButtonPopTime = WorldTime;
+                LButtonPressTime = 0.f;
             }
         }
         if (g_iFollowCharacter >= 0 && g_iFollowCharacter < MAX_CHARACTERS_CLIENT)
@@ -3238,9 +3256,7 @@ void MoveHero()
         }
         else if (Success &&
             ((
-                SelectedNpc != -1
-                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP)
-                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE)
+                directNpcClick
                 )
                 || ((o->CurrentAction != PLAYER_SHOCK && (o->Teleport != TELEPORT_BEGIN && o->Teleport != TELEPORT && o->Alpha >= 0.7f) &&
                     !Engine::Object::IsAttackAction(o->CurrentAction)
@@ -3278,10 +3294,7 @@ void MoveHero()
             }
             MouseUpdateTime = 0;
 
-            const bool npcInteractionRequested =
-                SelectedNpc != -1
-                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP)
-                && !g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE);
+            const bool npcInteractionRequested = directNpcClick;
 
             Success = false;
 
