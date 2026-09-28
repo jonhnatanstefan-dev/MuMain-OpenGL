@@ -197,23 +197,31 @@ void CNewUIMuHelper::InitButtons()
     m_TabBtn.ChangeRadioButtonInfo(true, m_Pos.x + 10.f, m_Pos.y + 48.f, 56, 22);
     m_TabBtn.ChangeFrame(m_iCurrentOpenTab);
 
+    const bool isPortuguese = std::strcmp(I18N::GetCurrentLocale(), "pt") == 0;
+    static const wchar_t* kPtSetting = L"Config.";
+    static const wchar_t* kPtSave = L"Salvar";
+    static const wchar_t* kPtReset = L"Reset";
+    const wchar_t* const* settingLabel = isPortuguese ? &kPtSetting : &I18N::Game::Setting;
+    const wchar_t* const* saveLabel = isPortuguese ? &kPtSave : &I18N::Game::SaveSetting;
+    const wchar_t* const* resetLabel = isPortuguese ? &kPtReset : &I18N::Game::Initialization;
+
     InsertButton(IMAGE_CHAINFO_BTN_STAT, m_Pos.x + 56, m_Pos.y + 78, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_HUNT_RANGE_ADD, 0);
     InsertButton(IMAGE_MACROUI_HELPER_RAGEMINUS, m_Pos.x + 56, m_Pos.y + 97, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_HUNT_RANGE_MINUS, 0);
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 191, 38, 24, 1, 0, 1, 1, &I18N::Game::Setting, nullptr, BUTTON_ID_SKILL2_CONFIG, 0); //-- skill 2
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 243, 38, 24, 1, 0, 1, 1, &I18N::Game::Setting, nullptr, BUTTON_ID_SKILL3_CONFIG, 0); //-- skill 3
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 84, 38, 24, 1, 0, 1, 1, &I18N::Game::Setting, nullptr, BUTTON_ID_POTION_CONFIG_ELF, 0); //-- Buff
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 79, 38, 24, 1, 0, 1, 1, &I18N::Game::Setting, nullptr, BUTTON_ID_POTION_CONFIG_SUMMY, 0); //-- potion
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 84, 38, 24, 1, 0, 1, 1, &I18N::Game::Setting, nullptr, BUTTON_ID_POTION_CONFIG, 0); //-- potion
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 17, m_Pos.y + 234, 38, 24, 1, 0, 1, 1, &I18N::Game::Setting, nullptr, BUTTON_ID_PARTY_CONFIG, 0); //-- potion
-    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 17, m_Pos.y + 234, 38, 24, 1, 0, 1, 1, &I18N::Game::Setting, nullptr, BUTTON_ID_PARTY_CONFIG_ELF, 0); //-- potion
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 191, 38, 24, 1, 0, 1, 1, settingLabel, nullptr, BUTTON_ID_SKILL2_CONFIG, 0); //-- skill 2
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 243, 38, 24, 1, 0, 1, 1, settingLabel, nullptr, BUTTON_ID_SKILL3_CONFIG, 0); //-- skill 3
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 84, 38, 24, 1, 0, 1, 1, settingLabel, nullptr, BUTTON_ID_POTION_CONFIG_ELF, 0); //-- Buff
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 79, 38, 24, 1, 0, 1, 1, settingLabel, nullptr, BUTTON_ID_POTION_CONFIG_SUMMY, 0); //-- potion
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 84, 38, 24, 1, 0, 1, 1, settingLabel, nullptr, BUTTON_ID_POTION_CONFIG, 0); //-- potion
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 17, m_Pos.y + 234, 38, 24, 1, 0, 1, 1, settingLabel, nullptr, BUTTON_ID_PARTY_CONFIG, 0); //-- potion
+    InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 17, m_Pos.y + 234, 38, 24, 1, 0, 1, 1, settingLabel, nullptr, BUTTON_ID_PARTY_CONFIG_ELF, 0); //-- potion
 
     InsertButton(IMAGE_CHAINFO_BTN_STAT, m_Pos.x + 56, m_Pos.y + 78, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_PICK_RANGE_ADD, 1);
     InsertButton(IMAGE_MACROUI_HELPER_RAGEMINUS, m_Pos.x + 56, m_Pos.y + 97, 16, 15, 0, 0, 0, 0, nullptr, nullptr, BUTTON_ID_PICK_RANGE_MINUS, 1);
     InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 208, 38, 24, 1, 0, 1, 1, &I18N::Game::Add, nullptr, BUTTON_ID_ADD_OTHER_ITEM, 1); //-- Buff
     InsertButton(IMAGE_CLEARNESS_BTN, m_Pos.x + 132, m_Pos.y + 309, 38, 24, 1, 0, 1, 1, &I18N::Game::Delete, nullptr, BUTTON_ID_DELETE_OTHER_ITEM, 1); //-- Buff
     //--
-    InsertButton(IMAGE_IGS_BUTTON, m_Pos.x + 120, m_Pos.y + 388, 52, 26, 1, 0, 1, 1, &I18N::Game::SaveSetting, nullptr, BUTTON_ID_SAVE_CONFIG, -1);
-    InsertButton(IMAGE_IGS_BUTTON, m_Pos.x + 65, m_Pos.y + 388, 52, 26, 1, 0, 1, 1, &I18N::Game::Initialization, nullptr, BUTTON_ID_INIT_CONFIG, -1);
+    InsertButton(IMAGE_IGS_BUTTON, m_Pos.x + 120, m_Pos.y + 388, 52, 26, 1, 0, 1, 1, saveLabel, nullptr, BUTTON_ID_SAVE_CONFIG, -1);
+    InsertButton(IMAGE_IGS_BUTTON, m_Pos.x + 65, m_Pos.y + 388, 52, 26, 1, 0, 1, 1, resetLabel, nullptr, BUTTON_ID_INIT_CONFIG, -1);
     InsertButton(IMAGE_BASE_WINDOW_BTN_EXIT, m_Pos.x + 20, m_Pos.y + 388, 36, 29, 0, 0, 0, 0, nullptr, &I18N::Game::Close388, BUTTON_ID_EXIT_CONFIG, -1);
 
     RegisterBtnCharacter(0xFF, BUTTON_ID_HUNT_RANGE_ADD);
@@ -251,16 +259,31 @@ void CNewUIMuHelper::InitButtons()
 
 void CNewUIMuHelper::InitCheckBox()
 {
+    const bool isPortuguese = std::strcmp(I18N::GetCurrentLocale(), "pt") == 0;
+    static const wchar_t* kPtLongCounter = L"Contra-ataque";
+    static const wchar_t* kPtOriginalPos = L"Posição original";
+    static const wchar_t* kPtBasicFallback = L"Ataque básico";
+    static const wchar_t* kPtBuffDuration = L"Duração bônus";
+
+    const wchar_t* const* longCounterLabel =
+        isPortuguese ? &kPtLongCounter : &I18N::Game::LongDistanceCounterAttack;
+    const wchar_t* const* originalPosLabel =
+        isPortuguese ? &kPtOriginalPos : &I18N::Game::OriginalPosition;
+    const wchar_t* const* basicFallbackLabel =
+        isPortuguese ? &kPtBasicFallback : &I18N::Game::BasicAttackFallback;
+    const wchar_t* const* buffDurationLabel =
+        isPortuguese ? &kPtBuffDuration : &I18N::Game::BuffDuration;
+
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 79, m_Pos.y + 80, 15, 15, 0, &I18N::Game::Potion, CHECKBOX_ID_POTION, 0);
-    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 122, 15, 15, 0, &I18N::Game::LongDistanceCounterAttack, CHECKBOX_ID_LONG_DISTANCE, 0);
-    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 137, 15, 15, 0, &I18N::Game::OriginalPosition, CHECKBOX_ID_ORIG_POSITION, 0);
+    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 122, 15, 15, 0, longCounterLabel, CHECKBOX_ID_LONG_DISTANCE, 0);
+    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 137, 15, 15, 0, originalPosLabel, CHECKBOX_ID_ORIG_POSITION, 0);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 94, m_Pos.y + 174, 15, 15, 0, &I18N::Game::Delay, CHECKBOX_ID_SKILL2_DELAY, 0);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 94, m_Pos.y + 191, 15, 15, 0, &I18N::Game::Con, CHECKBOX_ID_SKILL2_CONDITION, 0);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 94, m_Pos.y + 226, 15, 15, 0, &I18N::Game::Delay, CHECKBOX_ID_SKILL3_DELAY, 0);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 94, m_Pos.y + 243, 15, 15, 0, &I18N::Game::Con, CHECKBOX_ID_SKILL3_CONDITION, 0);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 226, 15, 15, 0, &I18N::Game::Combo, CHECKBOX_ID_COMBO, 0);
-    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 266, 15, 15, 0, &I18N::Game::BasicAttackFallback, CHECKBOX_ID_FALLBACK_BASIC_ATTACK, 0);
-    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 291, 15, 15, 0, &I18N::Game::BuffDuration, CHECKBOX_ID_BUFF_DURATION, 0);
+    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 266, 15, 15, 0, basicFallbackLabel, CHECKBOX_ID_FALLBACK_BASIC_ATTACK, 0);
+    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 291, 15, 15, 0, buffDurationLabel, CHECKBOX_ID_BUFF_DURATION, 0);
 
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 218, 15, 15, 0, &I18N::Game::UseDarkSpirits, CHECKBOX_ID_USE_PET, 0);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 218, 15, 15, 0, &I18N::Game::Party, CHECKBOX_ID_PARTY, 0);
