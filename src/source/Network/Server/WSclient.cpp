@@ -3636,7 +3636,7 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
                 CreatePoint(Position, visualDamage, Light2, scale + 5.f);
             }
 
-            CreatePoint(o->Position, damage, Light, scale);
+            CreatePoint(o->Position, visualDamage, Light, scale);
         }
 
         if (shieldDamage > 0)
