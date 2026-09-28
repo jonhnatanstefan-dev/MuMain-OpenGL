@@ -1154,17 +1154,20 @@ MSG MainLoop()
             switch (event.type)
             {
             case SDL_EVENT_QUIT:
-                // Native window close (the title-bar X) bypasses WndProc's
-                // WM_DESTROY path. Close the network connection here as well;
-                // otherwise its worker can remain alive while global teardown
-                // runs, which made title-bar shutdown take minutes.
-                ReconnectManager::Instance().ClearSession();
-                if (SocketClient != nullptr)
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                // Handle the title-bar X / Alt+F4 immediately. Waiting for a
+                // later SDL_EVENT_QUIT can leave the client alive until another
+                // Windows input/focus event arrives.
+                if (!Destroy)
                 {
-                    SocketClient->Close();
-                    g_bGameServerConnected = false;
+                    ReconnectManager::Instance().ClearSession();
+                    if (SocketClient != nullptr)
+                    {
+                        SocketClient->Close();
+                        g_bGameServerConnected = false;
+                    }
+                    Destroy = true;
                 }
-                Destroy = true;
                 break;
             case SDL_EVENT_MOUSE_MOTION:
                 HandleMouseMotion(event.motion.x, event.motion.y);
@@ -1442,22 +1445,37 @@ DWORD GetDesktopBitsPerPel()
 
 void UpdateCursorClip()
 {
-    // Confine cursor in fullscreen + active only. In windowed mode the user
-    // must be able to move the cursor to other windows; when deactivated we
-    // must also release so Windows can focus other apps.
-    if (!g_hWnd || g_bUseWindowMode || !g_bWndActive)
+    // While the game owns focus, keep the pointer inside the game window.
+    // Release it on focus loss (Alt+Tab, etc.). On Windows use the complete
+    // window rectangle instead of only the client area so the title-bar X
+    // remains reachable.
+    if (!g_hWnd || !g_bWndActive)
     {
         ClipCursor(nullptr);
         return;
     }
+
+#ifdef _WIN32
+    RECT clip;
+    if (!GetWindowRect(g_hWnd, &clip))
+    {
+        ClipCursor(nullptr);
+        return;
+    }
+
+    ClipCursor(&clip);
+#else
+    // Non-Windows keeps the previous no-op compatibility path.
     RECT client;
-    if (!GetClientRect(g_hWnd, &client)) return;
+    if (!GetClientRect(g_hWnd, &client))
+        return;
     POINT tl = { client.left, client.top };
     POINT br = { client.right, client.bottom };
     ClientToScreen(g_hWnd, &tl);
     ClientToScreen(g_hWnd, &br);
     RECT clip = { tl.x, tl.y, br.x, br.y };
     ClipCursor(&clip);
+#endif
 }
 
 // Update camera state when window resolution changes
