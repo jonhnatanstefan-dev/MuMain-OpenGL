@@ -3129,13 +3129,18 @@ void MoveHero()
                 HeroAngle = (int)c->Object.Angle[2];
                 StandTime = 0;
 
-                if (c->MovementType == MOVEMENT_OPERATE)
+                if (c->MovementType == MOVEMENT_OPERATE ||
+                    c->MovementType == MOVEMENT_TALK)
+                {
                     Action(c, o, false);
+                }
                 else
+                {
                     if (!CheckArrow() && gCharacterManager.GetBaseClass(Hero->Class) == CLASS_ELF)
                         SetPlayerStop(Hero);
                     else
                         Action(c, o, false);
+                }
             }
             else
             {
