@@ -61,7 +61,12 @@ void DrawHealthBar(int centerX, int topY, float health, int steps, float scale)
 
     // HealthStatus < 0 is the "HP unknown" sentinel (server sends 0xFF -> -1, and
     // the field is initialized to -1), so render a full bar instead of an empty one.
-    const float clampedHealth = (health < 0.f) ? 1.f : health;
+    float clampedHealth = (health < 0.f) ? 1.f : health;
+    if (clampedHealth > 1.f)
+    {
+        clampedHealth = 1.f;
+    }
+
     const int stepHP = (int)(clampedHealth * steps);
 
     // Filled health segments.
@@ -88,7 +93,7 @@ SEASON3B::CNewUINameWindow::CNewUINameWindow()
     m_Pos.x = m_Pos.y = 0;
 
     m_bShowItemName = false;
-    m_bShowMonsterHealthBar = false;
+    m_bShowMonsterHealthBar = true;
 }
 
 SEASON3B::CNewUINameWindow::~CNewUINameWindow()
