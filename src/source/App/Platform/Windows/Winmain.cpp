@@ -1609,6 +1609,18 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     // Apply login settings from INI
     m_RememberMe = GameConfig::GetInstance().GetRememberMe() ? 1 : 0;
     std::wstring langSelection = GameConfig::GetInstance().GetLanguageSelection();
+
+    // Keep the legacy BMD language pack in sync with the modern UI locale.
+    // Without this mapping the UI can be pt-BR while QuestWords and other
+    // legacy tables still come from Data\\Local\\Eng.
+    const std::wstring uiLocaleForLegacy = GameConfig::GetInstance().GetUILocale();
+    if (uiLocaleForLegacy.rfind(L"pt", 0) == 0)
+        langSelection = L"Por";
+    else if (uiLocaleForLegacy.rfind(L"es", 0) == 0)
+        langSelection = L"Spn";
+    else if (uiLocaleForLegacy.rfind(L"en", 0) == 0)
+        langSelection = L"Eng";
+
     wcsncpy_s(g_aszMLSelection, langSelection.c_str(), MAX_LANGUAGE_NAME_LENGTH - 1);
     g_strSelectedML = g_aszMLSelection;
 

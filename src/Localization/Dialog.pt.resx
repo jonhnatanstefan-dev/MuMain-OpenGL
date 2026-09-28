@@ -161,7 +161,7 @@
     <comment>legacy_id=1601</comment>
   </data>
   <data name="Text_61" xml:space="preserve">
-    <value>O?perigo espreita em cada canto desses lugares e a 'Espada quebrada' não é vista facilmente. Mas se encontrá-la, novo poder será derramado sobre você! Volte aqui depois que encontrar a 'Espada quebrada'.</value>
+    <value>O perigo espreita em cada canto desses lugares e a 'Espada quebrada' não é vista facilmente. Mas se encontrá-la, novo poder será derramado sobre você! Volte aqui depois que encontrar a 'Espada quebrada'.</value>
     <comment>legacy_id=61</comment>
   </data>
   <data name="Answer_61_Slot_0" xml:space="preserve">
@@ -389,7 +389,7 @@
     <comment>legacy_id=1930</comment>
   </data>
   <data name="Text_94" xml:space="preserve">
-    <value>O?Abismo do Olho detém um significado especial para mim, pois supervisiono e me comunico por meio das dimensões deste mundo. Se trouxer o Abismo do Olho, eu lhe darei o título de Invocador sanguinário para Semeden, o supervisor de sua dimensão.</value>
+    <value>O Abismo do Olho tem um significado especial para mim, pois supervisiono e me comunico pelas dimensões deste mundo. Se trouxer o Abismo do Olho, concederei a você o título de Invocador Sanguinário de Semeden, o supervisor de sua dimensão.</value>
     <comment>legacy_id=94</comment>
   </data>
   <data name="Answer_94_Slot_0" xml:space="preserve">
@@ -397,7 +397,7 @@
     <comment>legacy_id=1940</comment>
   </data>
   <data name="Text_100" xml:space="preserve">
-    <value>O?tesouro lendário chamado 'Anel da Glória' é necessário para adquirir a bênção e a força de Muren. Ele manifestou sua presença mais uma vez dentro de nossas terras. Mas você não está pronto. Espere até que seja mais experiente.</value>
+    <value>O tesouro lendário chamado 'Anel da Glória' é necessário para adquirir a bênção e a força de Muren. Ele manifestou sua presença mais uma vez em nossas terras. Mas você ainda não está pronto. Espere até adquirir mais experiência.</value>
     <comment>legacy_id=100</comment>
   </data>
   <data name="Answer_100_Slot_0" xml:space="preserve">
@@ -413,7 +413,7 @@
     <comment>legacy_id=2010</comment>
   </data>
   <data name="Text_102" xml:space="preserve">
-    <value>O?tesouro lendário chamado 'Anel da Glória' é necessário para adquirir a bênção e a força de Muren. Ele manifestou sua presença mais uma vez dentro de nossas terras.</value>
+    <value>O tesouro lendário chamado 'Anel da Glória' é necessário para adquirir a bênção e a força de Muren. Ele manifestou sua presença mais uma vez em nossas terras.</value>
     <comment>legacy_id=102</comment>
   </data>
   <data name="Answer_102_Slot_0" xml:space="preserve">
@@ -939,5 +939,9 @@
   <data name="Answer_174_Slot_0" xml:space="preserve">
     <value>Termine de contar a história</value>
     <comment>legacy_id=2740</comment>
+  </data>
+  <data name="Text_0" xml:space="preserve">
+    <value>Olá! Precisa de alguma coisa?</value>
+    <comment>legacy_id=0</comment>
   </data>
 </root>

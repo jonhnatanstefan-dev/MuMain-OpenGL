@@ -2154,11 +2154,11 @@
     <comment>legacy_id=574</comment>
   </data>
   <data name="Absorb 30%% of damage" xml:space="preserve">
-    <value>Absorva 30% de dano % of</value>
+    <value>Absorve 30%% do dano</value>
     <comment>legacy_id=575</comment>
   </data>
   <data name="Increase 30%% of attacking &amp; Wizardry Dmg" xml:space="preserve">
-    <value>Aumenta em 30% o dano de ataque e magia de % of</value>
+    <value>Aumenta em 30%% o dano de ataque e magia</value>
     <comment>legacy_id=576</comment>
   </data>
   <data name="Increase %d%% of Damage" xml:space="preserve">
@@ -11002,7 +11002,7 @@
     <comment>legacy_id=3145</comment>
   </data>
   <data name="You need more %%s to purchase this item." xml:space="preserve">
-    <value>Você precisa de mais% %s para comprar este item.</value>
+    <value>Você precisa de mais %s para comprar este item.</value>
     <comment>legacy_id=3146</comment>
   </data>
   <data name="Cannot apply in Battle Zone." xml:space="preserve">
@@ -12880,5 +12880,26 @@
   <data name="Level: %u | Resets: %u" xml:space="preserve">
     <value>Nível: %u | Resets: %u</value>
     <comment>legacy_id=3810</comment>
+  </data>
+  <data name="BasicAttackFallback" xml:space="preserve">
+    <value>Ataque básico alternativo</value>
+  </data>
+  <data name="Connection lost" xml:space="preserve">
+    <value>Conexão perdida</value>
+  </data>
+  <data name="Checking server availability" xml:space="preserve">
+    <value>Verificando disponibilidade do servidor</value>
+  </data>
+  <data name="Logging in" xml:space="preserve">
+    <value>Entrando na conta</value>
+  </data>
+  <data name="Loading character list" xml:space="preserve">
+    <value>Carregando lista de personagens</value>
+  </data>
+  <data name="Entering the game" xml:space="preserve">
+    <value>Entrando no jogo</value>
+  </data>
+  <data name="Retrying in seconds" xml:space="preserve">
+    <value>Tentando novamente em %d segundos...</value>
   </data>
 </root>
