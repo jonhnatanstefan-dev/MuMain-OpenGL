@@ -61,6 +61,7 @@ namespace MUHelper
 		int GetNearestTarget();
 		int GetFarthestAttackingTarget();
 		void CleanupTargets();
+		void RefreshTargetsFromViewport();
 		int ComputeDistanceByRange(int iRange);
 		int ComputeDistanceFromTarget(CHARACTER* pTarget);
 		int ComputeDistanceBetween(POINT posA, POINT posB);
