@@ -27,6 +27,7 @@
 #include "Engine/Pathing/ZzzPath.h"
 #include "Audio/DSPlaySound.h"
 #include "I18N/All.h"
+#include "Dotnet/PacketFunctions_CommonEnums.h"
 
 
 #include "GameLogic/Events/MatchEvent.h"
@@ -104,6 +105,114 @@ int   MouseUpdateTimeMax = 6;
 // same click can't fall through to ground movement and instantly close the NPC window.
 // A fresh press (e.g. deliberately clicking the ground to walk away) still works normally.
 static bool s_bIgnoreHeldClickAfterNpcTalk = false;
+
+// Client-side bulk stat command queue. OpenMU exposes the normal single-point
+// stat packet but does not provide the legacy private-server /f /a /v /e /c
+// chat commands. Queueing keeps compatibility without flooding hundreds or
+// thousands of packets in one frame.
+static CharacterStatAttribute s_pendingStatType = CharacterStatAttribute::Strength;
+static int s_pendingStatPoints = 0;
+static uint64_t s_lastStatPacketTick = 0;
+
+static const wchar_t* GetStatShortName(CharacterStatAttribute stat)
+{
+    switch (stat)
+    {
+    case CharacterStatAttribute::Strength:   return L"Força";
+    case CharacterStatAttribute::Agility:    return L"Agilidade";
+    case CharacterStatAttribute::Vitality:   return L"Vitalidade";
+    case CharacterStatAttribute::Energy:     return L"Energia";
+    case CharacterStatAttribute::Leadership: return L"Comando";
+    default:                                 return L"Atributo";
+    }
+}
+
+static bool TryQueueStatCommand(const wchar_t* text)
+{
+    if (text == nullptr || text[0] != L'/' || CharacterAttribute == nullptr)
+        return false;
+
+    wchar_t command[24] = {};
+    int amount = 0;
+    const int parsed = swscanf(text, L"%23ls %d", command, &amount);
+    if (parsed <= 0)
+        return false;
+
+    CharacterStatAttribute stat;
+    bool recognized = true;
+
+    if (wcsicmp(command, L"/f") == 0 || wcsicmp(command, L"/forca") == 0 || wcsicmp(command, L"/str") == 0)
+        stat = CharacterStatAttribute::Strength;
+    else if (wcsicmp(command, L"/a") == 0 || wcsicmp(command, L"/agilidade") == 0 || wcsicmp(command, L"/agi") == 0)
+        stat = CharacterStatAttribute::Agility;
+    else if (wcsicmp(command, L"/v") == 0 || wcsicmp(command, L"/vitalidade") == 0 || wcsicmp(command, L"/vit") == 0)
+        stat = CharacterStatAttribute::Vitality;
+    else if (wcsicmp(command, L"/e") == 0 || wcsicmp(command, L"/energia") == 0 || wcsicmp(command, L"/ene") == 0)
+        stat = CharacterStatAttribute::Energy;
+    else if (wcsicmp(command, L"/c") == 0 || wcsicmp(command, L"/comando") == 0 || wcsicmp(command, L"/cmd") == 0)
+        stat = CharacterStatAttribute::Leadership;
+    else
+        recognized = false;
+
+    if (!recognized)
+        return false;
+
+    if (parsed < 2 || amount <= 0)
+    {
+        g_pSystemLogBox->AddText(
+            L"Uso: /f N, /a N, /v N, /e N ou /c N.",
+            SEASON3B::TYPE_SYSTEM_MESSAGE);
+        return true;
+    }
+
+    const int available = CharacterAttribute->LevelUpPoint;
+    if (available <= 0)
+    {
+        g_pSystemLogBox->AddText(L"Você não possui pontos disponíveis.", SEASON3B::TYPE_SYSTEM_MESSAGE);
+        return true;
+    }
+
+    amount = std::min(amount, available);
+    s_pendingStatType = stat;
+    s_pendingStatPoints = amount;
+    s_lastStatPacketTick = 0;
+
+    wchar_t message[128] = {};
+    swprintf_s(message, L"Adicionando %d ponto(s) em %ls.", amount, GetStatShortName(stat));
+    g_pSystemLogBox->AddText(message, SEASON3B::TYPE_SYSTEM_MESSAGE);
+    return true;
+}
+
+static void ProcessPendingStatCommand()
+{
+    if (s_pendingStatPoints <= 0)
+        return;
+
+    if (SocketClient == nullptr || !SocketClient->IsConnected() || CharacterAttribute == nullptr)
+    {
+        s_pendingStatPoints = 0;
+        return;
+    }
+
+    const uint64_t now = GetTickCount64();
+    if (s_lastStatPacketTick != 0 && now - s_lastStatPacketTick < 25)
+        return;
+
+    // Small paced batches avoid hammering the game server while still allowing
+    // thousands of points to be assigned quickly.
+    const int batch = std::min(s_pendingStatPoints, 10);
+    for (int i = 0; i < batch; ++i)
+        SocketClient->ToGameServer()->SendIncreaseCharacterStatPoint(s_pendingStatType);
+
+    s_pendingStatPoints -= batch;
+    s_lastStatPacketTick = now;
+
+    if (s_pendingStatPoints == 0)
+    {
+        g_pSystemLogBox->AddText(L"Distribuição de pontos concluída.", SEASON3B::TYPE_SYSTEM_MESSAGE);
+    }
+}
+
 bool  WhisperEnable = true;
 bool  ChatWindowEnable = true;
 int   InputFrame = 0;
@@ -1946,6 +2055,11 @@ bool CheckMacroLimit(wchar_t* Text)
 
 bool CheckCommand(wchar_t* Text, bool bMacroText)
 {
+    if (!bMacroText && TryQueueStatCommand(Text))
+    {
+        return true;
+    }
+
     if (g_ConsoleDebug->CheckCommand(Text) == true)
     {
         return true;
@@ -3423,6 +3537,8 @@ void SendMacroChat(wchar_t* Text)
 
 void MoveInterface()
 {
+    ProcessPendingStatCommand();
+
     if (g_Direction.IsDirection())
     {
         return;
