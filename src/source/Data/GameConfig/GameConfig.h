@@ -67,6 +67,10 @@ public:
     int GetZoom() const { return m_zoom; }
     void SetZoom(int zoom);
 
+    // Per-character skill hotkeys
+    std::vector<int> LoadSkillHotKeys(const std::wstring& characterName, size_t count);
+    void SaveSkillHotKeys(const std::wstring& characterName, const int* hotKeys, size_t count);
+
     // Helpers
     static std::wstring BinaryToHex(const BYTE* data, DWORD size);
     static std::vector<BYTE> HexToBinary(const std::wstring& hex);
