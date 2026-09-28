@@ -93,7 +93,7 @@ SEASON3B::CNewUINameWindow::CNewUINameWindow()
     m_Pos.x = m_Pos.y = 0;
 
     m_bShowItemName = false;
-    m_bShowMonsterHealthBar = true;
+    m_bShowMonsterHealthBar = false;
 }
 
 SEASON3B::CNewUINameWindow::~CNewUINameWindow()
