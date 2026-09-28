@@ -17,6 +17,7 @@
 #include "GameLogic/Social/PartyManager.h"
 #include "World/MapInfra/MapManager.h"
 #include "Network/Server/WSclient.h"
+#include "Scenes/SceneCore.h"
 
 #include "MuHelper.h"
 
@@ -50,7 +51,13 @@ namespace MUHelper
     {
         m_config = config;
 
-        PRECEIVE_MUHELPER_DATA netData;
+        if (SocketClient == nullptr || !SocketClient->IsConnected())
+        {
+            g_ConsoleDebug->Write(MCD_NORMAL, L"[MU Helper] Save skipped: game server is not connected");
+            return;
+        }
+
+        PRECEIVE_MUHELPER_DATA netData = {};
         ConfigDataSerDe::Serialize(m_config, netData);
 
         SocketClient->ToGameServer()->SendMuHelperSaveDataRequest(reinterpret_cast<BYTE*>(&netData), sizeof(netData));
@@ -85,13 +92,17 @@ namespace MUHelper
 
     void CMuHelper::TriggerStart()
     {
-        if (!Hero->SafeZone)
+        if (Hero == nullptr || SceneFlag != MAIN_SCENE)
+            return;
+
+        if (!Hero->SafeZone && SocketClient != nullptr && SocketClient->IsConnected())
             SocketClient->ToGameServer()->SendMuHelperStatusChangeRequest(0);
     }
 
     void CMuHelper::TriggerStop()
     {
-        SocketClient->ToGameServer()->SendMuHelperStatusChangeRequest(1);
+        if (SocketClient != nullptr && SocketClient->IsConnected())
+            SocketClient->ToGameServer()->SendMuHelperStatusChangeRequest(1);
     }
 
     void CMuHelper::Start()
@@ -101,13 +112,21 @@ namespace MUHelper
             return;
         }
 
+        if (Hero == nullptr || CharacterAttribute == nullptr || SceneFlag != MAIN_SCENE)
+        {
+            g_ConsoleDebug->Write(MCD_NORMAL, L"[MU Helper] Start ignored: character is not in the game world");
+            return;
+        }
+
         m_iTotalCost = 0;
         m_iComboState = 0;
         m_iCurrentBuffIndex = 0;
         m_iCurrentBuffPartyIndex = 0;
         m_iCurrentHealPartyIndex = 0;
         m_iCurrentTarget = -1;
-        m_iCurrentSkill = (ActionSkillType)m_config.aiSkill[0];
+        m_iCurrentSkill = m_config.aiSkill.empty()
+            ? AT_SKILL_UNDEFINED
+            : static_cast<ActionSkillType>(m_config.aiSkill[0]);
         m_iCurrentItem = MAX_ITEMS;
         m_posOriginal = { Hero->PositionX, Hero->PositionY };
 
@@ -122,6 +141,19 @@ namespace MUHelper
 
         m_iLoopCounter = 0;
 
+        // A restarted helper (especially after reconnect) must not carry target
+        // or drop IDs belonging to the previous world instance.
+        {
+            _targetsLock.lock();
+            m_setTargets.clear();
+            m_setTargetsAttacking.clear();
+            _targetsLock.unlock();
+
+            _itemsLock.lock();
+            m_setItems.clear();
+            _itemsLock.unlock();
+        }
+
         m_bActive = true;
         g_ConsoleDebug->Write(MCD_NORMAL, L"[MU Helper] Started");
     }
@@ -129,6 +161,21 @@ namespace MUHelper
     void CMuHelper::Stop()
     {
         m_bActive = false;
+        m_iCurrentTarget = -1;
+        m_iCurrentItem = MAX_ITEMS;
+        m_iComboState = 0;
+
+        {
+            _targetsLock.lock();
+            m_setTargets.clear();
+            m_setTargetsAttacking.clear();
+            _targetsLock.unlock();
+
+            _itemsLock.lock();
+            m_setItems.clear();
+            _itemsLock.unlock();
+        }
+
         g_ConsoleDebug->Write(MCD_NORMAL, L"[MU Helper] Stopped");
     }
 
@@ -139,10 +186,19 @@ namespace MUHelper
             return;
         }
 
+        // Timers continue to tick while reconnect/login/loading scenes are
+        // active. Never touch world pointers after ReleaseMainData().
+        if (SceneFlag != MAIN_SCENE || Hero == nullptr || CharacterAttribute == nullptr ||
+            SocketClient == nullptr || !SocketClient->IsConnected())
+        {
+            return;
+        }
+
         if (Hero->SafeZone)
         {
             g_ConsoleDebug->Write(MCD_NORMAL, L"[MU Helper] Entered safezone. Stopping.");
             TriggerStop();
+            Stop();
             return;
         }
 
@@ -305,9 +361,15 @@ namespace MUHelper
         for (const int& iMonsterId : setTargets)
         {
             int iIndex = FindCharacterIndex(iMonsterId);
+            if (iIndex == MAX_CHARACTERS_CLIENT)
+            {
+                DeleteTarget(iMonsterId);
+                continue;
+            }
+
             CHARACTER* pTarget = &CharactersClient[iIndex];
 
-            if (!IsMonster(pTarget))
+            if (!IsMonster(pTarget) || pTarget->Dead > 0 || !pTarget->Object.Live)
             {
                 continue;
             }
@@ -338,9 +400,15 @@ namespace MUHelper
         for (const int& iMonsterId : setTargets)
         {
             int iIndex = FindCharacterIndex(iMonsterId);
+            if (iIndex == MAX_CHARACTERS_CLIENT)
+            {
+                DeleteTarget(iMonsterId);
+                continue;
+            }
+
             CHARACTER* pTarget = &CharactersClient[iIndex];
 
-            if (!IsMonster(pTarget))
+            if (!IsMonster(pTarget) || pTarget->Dead > 0 || !pTarget->Object.Live)
             {
                 continue;
             }
@@ -639,6 +707,9 @@ namespace MUHelper
     {
         int64_t iLife = CharacterAttribute->Life;
         int64_t iLifeMax = CharacterAttribute->LifeMax;
+        if (iLifeMax <= 0)
+            return 1;
+
         int64_t iRemaining = (iLife * 100 + iLifeMax - 1) / iLifeMax;
 
         if (iRemaining <= m_config.iHealThreshold)
@@ -664,10 +735,14 @@ namespace MUHelper
 
         int64_t iLife = CharacterAttribute->Life;
         int64_t iLifeMax = CharacterAttribute->LifeMax;
+        if (iLifeMax <= 0)
+            return 1;
+
         int64_t iRemaining = (iLife * 100 + iLifeMax - 1) / iLifeMax;
 
         if (iRemaining <= m_config.iHealThreshold)
         {
+            CleanupTargets();
             m_iCurrentTarget = GetNearestTarget();
             if (m_iCurrentTarget != -1)
             {
@@ -685,7 +760,7 @@ namespace MUHelper
             for (int i = 0; i < MAX_EQUIPMENT; i++)
             {
                 ITEM* pItem = &CharacterMachine->Equipment[i];
-                if (!pItem || pItem->Type == -1)
+                if (!pItem || pItem->Type < 0 || pItem->Type >= MAX_ITEM)
                 {
                     continue;
                 }
@@ -699,6 +774,10 @@ namespace MUHelper
                 int iLevel = pItem->Level;
                 int iDurability = pItem->Durability;
                 int iMaxDurability = CalcMaxDurability(pItem, pAttr, iLevel);
+                if (iMaxDurability <= 0)
+                {
+                    continue;
+                }
 
                 int64_t iHealth = (iDurability * 100 + iMaxDurability - 1) / iMaxDurability;
 
@@ -812,7 +891,7 @@ namespace MUHelper
             }
         }
 
-        if (m_config.aiSkill[0] > 0)
+        if (!m_config.aiSkill.empty() && m_config.aiSkill[0] > 0)
         {
             return (ActionSkillType)m_config.aiSkill[0];
         }
@@ -822,7 +901,13 @@ namespace MUHelper
 
     int CMuHelper::SimulateComboAttack()
     {
-        for (int i = 0; i < m_config.aiSkill.size(); i++)
+        if (m_config.aiSkill.size() < 3)
+        {
+            m_iComboState = 0;
+            return 0;
+        }
+
+        for (int i = 0; i < 3; i++)
         {
             if (m_config.aiSkill[i] == 0)
             {
