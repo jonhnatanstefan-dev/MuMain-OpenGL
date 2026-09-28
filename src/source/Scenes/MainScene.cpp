@@ -126,6 +126,7 @@ static bool ShouldRenderLeaves()
 static void InitializeMainScene()
 {
     g_pMainFrame->ResetSkillHotKey();
+    g_pMainFrame->LoadSkillHotKeys(CharactersClient[SelectedHero].ID);
 
     g_ConsoleDebug->Write(MCD_NORMAL, L"Join the game with the following character: %ls", CharactersClient[SelectedHero].ID);
     g_ErrorReport.Write(L"> Character selected <%d> \"%ls\"\r\n", SelectedHero + 1, CharactersClient[SelectedHero].ID);
