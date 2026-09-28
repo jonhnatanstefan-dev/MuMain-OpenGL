@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "Data/GameConfig/GameConfig.h"
 #include <algorithm>
 #include "I18N/All.h"
 
@@ -915,6 +916,11 @@ void SEASON3B::CNewUIMainFrameWindow::ResetSkillHotKey()
     g_pSkillList->Reset();
 }
 
+void SEASON3B::CNewUIMainFrameWindow::LoadSkillHotKeys(const wchar_t* characterName)
+{
+    g_pSkillList->LoadHotKeysForCharacter(characterName);
+}
+
 void SEASON3B::CNewUIMainFrameWindow::SetSkillHotKey(int iHotKey, int iSkillType)
 {
     g_pSkillList->SetHotKey(iHotKey, iSkillType);
@@ -1339,6 +1345,7 @@ void SEASON3B::CNewUISkillList::Reset()
     {
         m_iHotKeySkillType[i] = -1;
     }
+    m_hotKeyCharacterName.clear();
 
     m_EventState = EVENT_NONE;
 }
@@ -1804,8 +1811,30 @@ bool SEASON3B::CNewUISkillList::IsArrayIn(BYTE bySkill)
     return false;
 }
 
+void SEASON3B::CNewUISkillList::LoadHotKeysForCharacter(const wchar_t* characterName)
+{
+    m_hotKeyCharacterName = (characterName != nullptr) ? characterName : L"";
+
+    const auto saved = GameConfig::GetInstance().LoadSkillHotKeys(
+        m_hotKeyCharacterName, SKILLHOTKEY_COUNT);
+
+    for (int i = 0; i < SKILLHOTKEY_COUNT; ++i)
+    {
+        int value = saved[i];
+
+        const bool regularSkill = value >= 0 && value < MAX_MAGIC;
+        const bool petCommand =
+            value >= AT_PET_COMMAND_DEFAULT && value < AT_PET_COMMAND_END;
+
+        m_iHotKeySkillType[i] = (regularSkill || petCommand) ? value : -1;
+    }
+}
+
 void SEASON3B::CNewUISkillList::SetHotKey(int iHotKey, int iSkillType)
 {
+    if (iHotKey < 0 || iHotKey >= SKILLHOTKEY_COUNT)
+        return;
+
     for (int i = 0; i < SKILLHOTKEY_COUNT; ++i)
     {
         if (m_iHotKeySkillType[i] == iSkillType)
@@ -1816,6 +1845,14 @@ void SEASON3B::CNewUISkillList::SetHotKey(int iHotKey, int iSkillType)
     }
 
     m_iHotKeySkillType[iHotKey] = iSkillType;
+
+    if (!m_hotKeyCharacterName.empty())
+    {
+        GameConfig::GetInstance().SaveSkillHotKeys(
+            m_hotKeyCharacterName,
+            m_iHotKeySkillType,
+            SKILLHOTKEY_COUNT);
+    }
 }
 
 int SEASON3B::CNewUISkillList::GetHotKey(int iHotKey)
