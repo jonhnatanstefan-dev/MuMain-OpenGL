@@ -5,6 +5,77 @@
 
 #include <cstring>
 
+namespace
+{
+    // The original MU Portuguese/Spanish BMD packs are not consistent: some
+    // strings are UTF-8 while older tables are Windows-1252. Detect valid
+    // UTF-8 first and only fall back to CP1252 when the byte sequence cannot
+    // represent valid UTF-8. This keeps modern UTF-8 resources intact while
+    // correctly decoding legacy accents such as ã, ç, í and ó.
+    bool IsValidUtf8(const unsigned char* data, int length)
+    {
+        int i = 0;
+        while (i < length)
+        {
+            const unsigned char c = data[i];
+            if (c <= 0x7F)
+            {
+                ++i;
+                continue;
+            }
+
+            int continuationCount = 0;
+            unsigned int codePoint = 0;
+
+            if ((c & 0xE0) == 0xC0)
+            {
+                continuationCount = 1;
+                codePoint = c & 0x1F;
+                if (codePoint == 0) // Reject overlong 2-byte sequences.
+                    return false;
+            }
+            else if ((c & 0xF0) == 0xE0)
+            {
+                continuationCount = 2;
+                codePoint = c & 0x0F;
+            }
+            else if ((c & 0xF8) == 0xF0)
+            {
+                continuationCount = 3;
+                codePoint = c & 0x07;
+            }
+            else
+            {
+                return false;
+            }
+
+            if (i + continuationCount >= length)
+                return false;
+
+            for (int j = 1; j <= continuationCount; ++j)
+            {
+                const unsigned char cc = data[i + j];
+                if ((cc & 0xC0) != 0x80)
+                    return false;
+                codePoint = (codePoint << 6) | (cc & 0x3F);
+            }
+
+            if ((continuationCount == 1 && codePoint < 0x80)
+                || (continuationCount == 2 && codePoint < 0x800)
+                || (continuationCount == 3 && codePoint < 0x10000)
+                || codePoint > 0x10FFFF
+                || (codePoint >= 0xD800 && codePoint <= 0xDFFF))
+            {
+                return false;
+            }
+
+            i += continuationCount + 1;
+        }
+
+        return true;
+    }
+}
+
 CMultiLanguage* CMultiLanguage::ms_Singleton = NULL;
 
 CMultiLanguage::CMultiLanguage(std::wstring strSelectedML)
@@ -62,37 +133,48 @@ int32_t CMultiLanguage::ConvertFromUtf8(wchar_t* target, const char* source, int
         return 0;
     }
 
-    // Determine how many UTF-16 characters are needed
-    const int requiredChars = MultiByteToWideChar(CP_UTF8, 0, source, maxSourceLength, nullptr, 0);
+    int sourceLength = 0;
+    if (maxSourceLength < 0)
+    {
+        sourceLength = static_cast<int>(std::strlen(source));
+    }
+    else
+    {
+        while (sourceLength < maxSourceLength && source[sourceLength] != '\0')
+            ++sourceLength;
+    }
+
+    if (sourceLength == 0)
+    {
+        target[0] = L'\0';
+        return 0;
+    }
+
+    const bool validUtf8 = IsValidUtf8(
+        reinterpret_cast<const unsigned char*>(source), sourceLength);
+
+    // Portuguese/Spanish legacy BMD files shipped by MU frequently use
+    // Windows-1252. Newer resources use UTF-8. Select the decoder from the
+    // actual byte sequence instead of assuming every BMD is UTF-8.
+    const UINT codePage = validUtf8 ? CP_UTF8 : 1252;
+
+    const int requiredChars = MultiByteToWideChar(
+        codePage, 0, source, sourceLength, nullptr, 0);
     if (requiredChars <= 0)
     {
         target[0] = L'\0';
         return 0;
     }
 
-    // Perform the conversion
-    int written = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        source,
-        maxSourceLength,    // read at most this many bytes
-        target,
-        requiredChars       // assume destination large enough
-    );
-
+    const int written = MultiByteToWideChar(
+        codePage, 0, source, sourceLength, target, requiredChars);
     if (written <= 0)
     {
         target[0] = L'\0';
         return 0;
     }
 
-    // If the source contained a null terminator within the range,
-    // MultiByteToWideChar copies it as well.
-    if (written < maxSourceLength)
-    {
-        target[written] = L'\0';
-    }
-
+    target[written] = L'\0';
     return written;
 }
 
