@@ -894,6 +894,9 @@ BOOL ReceiveLogOut(const BYTE* ReceiveBuffer, BOOL bEncrypted)
     switch (Data->Value)
     {
     case 0:
+        // Intentional client exit: invalidate the cached auto-reconnect session
+        // so shutdown/logout can never be mistaken for a recoverable drop.
+        ReconnectManager::Instance().ClearSession();
         g_GuildCache.Reset();
         memset(GuildMark[MARK_EDIT].Mark, 0, sizeof(GuildMark[MARK_EDIT].Mark));
         memset(GuildMark[MARK_EDIT].GuildName, 0, sizeof(GuildMark[MARK_EDIT].GuildName));
@@ -918,6 +921,8 @@ BOOL ReceiveLogOut(const BYTE* ReceiveBuffer, BOOL bEncrypted)
         InitGame();
         break;
     case 2:
+        // Explicit logout to the login screen ends the resumable game session.
+        ReconnectManager::Instance().ClearSession();
         if (SceneFlag == MAIN_SCENE)
         {
             CryWolfMVPInit();
