@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "GameConfig.h"
 
+#include <algorithm>
+
 #ifdef _WIN32
 #include <imagehlp.h>
 #endif
