@@ -9875,12 +9875,19 @@ void ReceiveOption(const BYTE* ReceiveBuffer)
             {
                 if (iHotKey == CharacterAttribute->Skill[j])
                 {
-                    g_pMainFrame->SetSkillHotKey(i, j);
+                    g_pMainFrame->SetSkillHotKey(i, j, false);
                     break;
                 }
             }
         }
     }
+
+    // Server option packets may contain no skill hotkeys (or an older set).
+    // Re-apply the per-character local set after parsing the server packet so
+    // assignments made by the user survive a normal client restart and a close
+    // via the native window X.
+    if (Hero != nullptr)
+        g_pMainFrame->LoadSkillHotKeys(Hero->ID);
 
     if ((Data->GameOption & AUTOATTACK_ON) == AUTOATTACK_ON)
     {
