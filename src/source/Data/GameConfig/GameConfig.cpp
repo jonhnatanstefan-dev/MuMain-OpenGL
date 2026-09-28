@@ -29,6 +29,24 @@ namespace
 
         return std::clamp(fps, MIN_GAME_FPS, MAX_GAME_FPS);
     }
+
+    std::wstring BuildSkillHotkeySection(const std::wstring& characterName)
+    {
+        std::wstring safeName = characterName;
+        for (wchar_t& ch : safeName)
+        {
+            if (ch == L'[' || ch == L']' || ch == L'=' ||
+                ch == L'\r' || ch == L'\n' || ch == L';')
+            {
+                ch = L'_';
+            }
+        }
+
+        if (safeName.empty())
+            safeName = L"default";
+
+        return L"SkillHotkeys." + safeName;
+    }
 }
 
 GameConfig& GameConfig::GetInstance()
@@ -221,6 +239,33 @@ void GameConfig::SetServerPort(int port)
 void GameConfig::SetZoom(int zoom)
 {
     m_zoom = zoom;
+}
+
+std::vector<int> GameConfig::LoadSkillHotKeys(const std::wstring& characterName, size_t count)
+{
+    std::vector<int> hotKeys(count, -1);
+    const std::wstring section = BuildSkillHotkeySection(characterName);
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        const std::wstring key = L"Key" + std::to_wstring(i);
+        hotKeys[i] = ReadInt(section.c_str(), key.c_str(), -1);
+    }
+
+    return hotKeys;
+}
+
+void GameConfig::SaveSkillHotKeys(const std::wstring& characterName, const int* hotKeys, size_t count)
+{
+    if (hotKeys == nullptr || count == 0)
+        return;
+
+    const std::wstring section = BuildSkillHotkeySection(characterName);
+    for (size_t i = 0; i < count; ++i)
+    {
+        const std::wstring key = L"Key" + std::to_wstring(i);
+        WriteInt(section.c_str(), key.c_str(), hotKeys[i]);
+    }
 }
 
 // Helper function to convert binary data to hex string
