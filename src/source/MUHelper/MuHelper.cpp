@@ -881,7 +881,14 @@ namespace MUHelper
                 // animation state, server rejection). Do not let that suppress
                 // Basic Attack Fallback for the whole helper tick.
                 if (SimulateAttack(m_iCurrentSkill) != 0)
-                    return 1;
+                {
+                    // Some mounted skill paths (notably Fenrir) can report a
+                    // client-side success without entering an actual attack
+                    // animation. In that case allow Basic Attack Fallback to
+                    // continue instead of stalling the helper indefinitely.
+                    if (!m_config.bFallbackBasicAttack || IsHeroSwingInProgress())
+                        return 1;
+                }
             }
         }
 
@@ -1194,10 +1201,26 @@ namespace MUHelper
             return 0;
         }
 
-        Hero->MovementType = MOVEMENT_ATTACK;
+        // Send the basic hit directly. Calling the generic Action() path from
+        // the helper re-enters the normal mouse/auto-attack state machine and
+        // can be swallowed by mounted/Fenrir animation state. This mirrors the
+        // actual MOVEMENT_ATTACK send sequence without depending on mouse input.
+        MouseUpdateTime = MouseUpdateTimeMax;
+        SetPlayerAttack(Hero);
+        Hero->AttackTime = 1;
+        VectorCopy(pTarget->Object.Position, Hero->TargetPosition);
+        Hero->Object.Angle[2] = CreateAngle2D(Hero->Object.Position, Hero->TargetPosition);
+        LetHeroStop();
+        Hero->Movement = false;
+        Hero->TargetCharacter = iCharIndex;
+        Hero->Skill = 0;
+
+        SelectedCharacter = iCharIndex;
         ActionTarget = iCharIndex;
         Attacking = 1;
-        Action(Hero, &Hero->Object, true);
+
+        const int dir = ((BYTE)((Hero->Object.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8);
+        SocketClient->ToGameServer()->SendHitRequest(pTarget->Key, AT_ATTACK1, dir);
         return 1;
     }
 
