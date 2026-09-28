@@ -9,6 +9,8 @@
 #include "Audio/DSPlaySound.h"
 #include "Data/GameConfig/GameConfig.h"
 #include "Audio/AudioPlayer.h"
+#include "Render/Textures/ZzzOpenglUtil.h"
+#include "Scenes/SceneManager.h"
 #include <algorithm>
 #include <cstring>
 #include "I18N/All.h"
@@ -68,6 +70,18 @@ static const struct { const char* code; const wchar_t* label; } s_Languages[] = 
 };
 static const int s_NumLanguages = sizeof(s_Languages) / sizeof(s_Languages[0]);
 
+static const struct { int fps; const wchar_t* label; } s_FpsOptions[] = {
+    { -1,  L"Sem limite" },
+    { 30,  L"30 FPS" },
+    { 60,  L"60 FPS" },
+    { 75,  L"75 FPS" },
+    { 120, L"120 FPS" },
+    { 144, L"144 FPS" },
+    { 165, L"165 FPS" },
+    { 240, L"240 FPS" },
+};
+static const int s_NumFpsOptions = sizeof(s_FpsOptions) / sizeof(s_FpsOptions[0]);
+
 // Label pointer array for the resolution combo box. Built once on first use
 // from s_Resolutions so the combo can consume a plain `const wchar_t* const*`.
 static const wchar_t* const* GetResolutionLabels()
@@ -91,6 +105,19 @@ static const wchar_t* const* GetLanguageLabels()
     {
         for (int i = 0; i < s_NumLanguages; i++)
             labels[i] = s_Languages[i].label;
+        initialized = true;
+    }
+    return labels;
+}
+
+static const wchar_t* const* GetFpsLabels()
+{
+    static const wchar_t* labels[s_NumFpsOptions] = {};
+    static bool initialized = false;
+    if (!initialized)
+    {
+        for (int i = 0; i < s_NumFpsOptions; i++)
+            labels[i] = s_FpsOptions[i].label;
         initialized = true;
     }
     return labels;
@@ -133,6 +160,16 @@ namespace
     // down compared to the pre-language layout. Used so the frame slats and
     // the click-hit rect stay in sync.
     constexpr int LANGUAGE_ROW_HEIGHT = 39;
+
+    // Video timing controls are placed below the Windowed Mode row.
+    constexpr int PERFORMANCE_ROW_HEIGHT = 44;
+    constexpr int VSYNC_Y_LOCAL = 322 + LANGUAGE_ROW_HEIGHT;
+    constexpr int FPS_LABEL_Y_LOCAL = 346 + LANGUAGE_ROW_HEIGHT;
+    constexpr int FPS_COMBO_X_LOCAL = 92;
+    constexpr int FPS_COMBO_Y_LOCAL = 342 + LANGUAGE_ROW_HEIGHT;
+    constexpr int FPS_COMBO_WIDTH = 78;
+    constexpr int FPS_COMBO_HEIGHT = 16;
+    constexpr int FPS_COMBO_MAX_VISIBLE = 5;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -155,6 +192,8 @@ SEASON3B::CNewUIOptionWindow::CNewUIOptionWindow()
     m_iResolutionIndex = FindCurrentResolutionIndex();
     m_bWindowedMode = (g_bUseWindowMode == TRUE);
     m_iLanguageIndex = FindCurrentLanguageIndex();
+    m_bVSync = GameConfig::GetInstance().GetVSync();
+    m_iFpsIndex = FindCurrentFpsIndex();
 }
 
 SEASON3B::CNewUIOptionWindow::~CNewUIOptionWindow()
@@ -174,6 +213,7 @@ bool SEASON3B::CNewUIOptionWindow::Create(CNewUIManager* pNewUIMng, int x, int y
     SetButtonInfo();
     InitResolutionCombo();
     InitLanguageCombo();
+    InitFpsCombo();
     Show(false);
     return true;
 }
@@ -204,11 +244,24 @@ void SEASON3B::CNewUIOptionWindow::InitLanguageCombo()
         LANG_COMBO_MAX_VISIBLE);
 }
 
+void SEASON3B::CNewUIOptionWindow::InitFpsCombo()
+{
+    m_FpsCombo.Setup(
+        m_Pos.x + FPS_COMBO_X_LOCAL,
+        m_Pos.y + FPS_COMBO_Y_LOCAL,
+        FPS_COMBO_WIDTH,
+        FPS_COMBO_HEIGHT,
+        GetFpsLabels(),
+        s_NumFpsOptions,
+        m_iFpsIndex,
+        FPS_COMBO_MAX_VISIBLE);
+}
+
 void SEASON3B::CNewUIOptionWindow::SetButtonInfo()
 {
     m_BtnClose.ChangeTextBackColor(RGBA(255, 255, 255, 0));
     m_BtnClose.ChangeButtonImgState(true, IMAGE_OPTION_BTN_CLOSE, true);
-    m_BtnClose.ChangeButtonInfo(m_Pos.x + 68, m_Pos.y + 322 + LANGUAGE_ROW_HEIGHT, 54, 30);
+    m_BtnClose.ChangeButtonInfo(m_Pos.x + 68, m_Pos.y + 322 + LANGUAGE_ROW_HEIGHT + PERFORMANCE_ROW_HEIGHT, 54, 30);
     m_BtnClose.ChangeImgColor(BUTTON_STATE_UP, RGBA(255, 255, 255, 255));
     m_BtnClose.ChangeImgColor(BUTTON_STATE_DOWN, RGBA(255, 255, 255, 255));
 }
@@ -230,6 +283,7 @@ void SEASON3B::CNewUIOptionWindow::SetPos(int x, int y)
     m_Pos.y = y;
     m_ResolutionCombo.SetPos(m_Pos.x + RES_COMBO_X_LOCAL, m_Pos.y + RES_COMBO_Y_LOCAL);
     m_LanguageCombo.SetPos(m_Pos.x + LANG_COMBO_X_LOCAL, m_Pos.y + LANG_COMBO_Y_LOCAL);
+    m_FpsCombo.SetPos(m_Pos.x + FPS_COMBO_X_LOCAL, m_Pos.y + FPS_COMBO_Y_LOCAL);
 }
 
 bool SEASON3B::CNewUIOptionWindow::UpdateMouseEvent()
@@ -265,8 +319,21 @@ bool SEASON3B::CNewUIOptionWindow::UpdateMouseEvent()
     if (m_LanguageCombo.IsMouseOverWidget())
         return false;
 
+    if (m_FpsCombo.UpdateMouseEvent())
+    {
+        m_iFpsIndex = m_FpsCombo.GetSelectedIndex();
+        ApplyFrameTiming();
+        return false;
+    }
+    if (m_FpsCombo.IsMouseOverWidget())
+        return false;
+
     bool oldWindowedMode = m_bWindowedMode;
+    const bool oldVSync = m_bVSync;
     HandleCheckboxInputs();
+
+    if (m_bVSync != oldVSync)
+        ApplyFrameTiming();
 
     // Apply windowed/fullscreen toggle. Saving to config alone isn't enough —
     // we also have to swap the window style and display mode live so the user
@@ -443,7 +510,7 @@ bool SEASON3B::CNewUIOptionWindow::UpdateMouseEvent()
 
     // Combo box already processed at the top. Just consume clicks inside the
     // option window itself so they don't fall through to the world.
-    if (CheckMouseIn(m_Pos.x, m_Pos.y, 190, 362 + LANGUAGE_ROW_HEIGHT))
+    if (CheckMouseIn(m_Pos.x, m_Pos.y, 190, 362 + LANGUAGE_ROW_HEIGHT + PERFORMANCE_ROW_HEIGHT))
         return false;
 
     return true;
@@ -458,6 +525,7 @@ void SEASON3B::CNewUIOptionWindow::HandleCheckboxInputs()
         { 155, &m_bSlideHelp         },
         { 238, &m_bRenderAllEffects  },
         { 300 + LANGUAGE_ROW_HEIGHT, &m_bWindowedMode      },
+        { VSYNC_Y_LOCAL,             &m_bVSync             },
     };
 
     constexpr int CHECKBOX_X_LOCAL = 150;
@@ -601,12 +669,18 @@ void SEASON3B::CNewUIOptionWindow::OpenningProcess()
     m_LanguageCombo.SetSelectedIndex(m_iLanguageIndex);
     m_LanguageCombo.Close();
     m_bWindowedMode = (g_bUseWindowMode == TRUE);
+
+    m_bVSync = GameConfig::GetInstance().GetVSync();
+    m_iFpsIndex = FindCurrentFpsIndex();
+    m_FpsCombo.SetSelectedIndex(m_iFpsIndex);
+    m_FpsCombo.Close();
 }
 
 void SEASON3B::CNewUIOptionWindow::ClosingProcess()
 {
     m_ResolutionCombo.Close();
     m_LanguageCombo.Close();
+    m_FpsCombo.Close();
 }
 
 void SEASON3B::CNewUIOptionWindow::LoadImages()
@@ -652,7 +726,8 @@ void SEASON3B::CNewUIOptionWindow::RenderFrame()
     // extra slats below the original 23 cover the LANGUAGE_ROW_HEIGHT space
     // inserted between the resolution combo and the windowed-mode row.
     constexpr int EXTRA_SLATS_FOR_LANGUAGE = (LANGUAGE_ROW_HEIGHT + 9) / 10;
-    constexpr int SLAT_COUNT = 23 + EXTRA_SLATS_FOR_LANGUAGE;
+    constexpr int EXTRA_SLATS_FOR_PERFORMANCE = (PERFORMANCE_ROW_HEIGHT + 9) / 10;
+    constexpr int SLAT_COUNT = 23 + EXTRA_SLATS_FOR_LANGUAGE + EXTRA_SLATS_FOR_PERFORMANCE;
     constexpr float FRAME_HEIGHT = 64.f + SLAT_COUNT * 10.f + 45.f;
     RenderImage(IMAGE_OPTION_FRAME_BACK, x, y, 190.f, FRAME_HEIGHT);
     RenderImage(IMAGE_OPTION_FRAME_UP, x, y, 190.f, 64.f);
@@ -725,6 +800,12 @@ void SEASON3B::CNewUIOptionWindow::RenderContents()
     y += 35.f;
     RenderImage(IMAGE_OPTION_POINT, x, y, 10.f, 10.f);       // Windowed Mode
     g_pRenderText->RenderText(m_Pos.x + 40, m_Pos.y + 302 + LANGUAGE_ROW_HEIGHT, I18N::Game::WindowedMode);
+
+    RenderImage(IMAGE_OPTION_POINT, m_Pos.x + 20.f, m_Pos.y + VSYNC_Y_LOCAL + 3.f, 10.f, 10.f);
+    g_pRenderText->RenderText(m_Pos.x + 40, m_Pos.y + VSYNC_Y_LOCAL + 2, L"VSync");
+
+    RenderImage(IMAGE_OPTION_POINT, m_Pos.x + 20.f, m_Pos.y + FPS_LABEL_Y_LOCAL + 1.f, 10.f, 10.f);
+    g_pRenderText->RenderText(m_Pos.x + 40, m_Pos.y + FPS_LABEL_Y_LOCAL, L"FPS");
 }
 
 void SEASON3B::CNewUIOptionWindow::RenderButtons()
@@ -795,13 +876,22 @@ void SEASON3B::CNewUIOptionWindow::RenderButtons()
         RenderImage(IMAGE_OPTION_BTN_CHECK, m_Pos.x + 150, m_Pos.y + 300 + LANGUAGE_ROW_HEIGHT, 15, 15, 0, 15.f);
     }
 
+    if (m_bVSync)
+    {
+        RenderImage(IMAGE_OPTION_BTN_CHECK, m_Pos.x + 150, m_Pos.y + VSYNC_Y_LOCAL, 15, 15, 0, 0);
+    }
+    else
+    {
+        RenderImage(IMAGE_OPTION_BTN_CHECK, m_Pos.x + 150, m_Pos.y + VSYNC_Y_LOCAL, 15, 15, 0, 15.f);
+    }
+
     // Combo boxes drawn last so their expanded dropdowns sit on top of
     // anything else in the window. Within the combo pair, render the
     // closed one(s) first and any open dropdown last - otherwise a combo
     // physically below an open one would draw its closed field on top of
     // that open dropdown's list (since they overlap in screen space when
     // the upper one expands downward).
-    CNewUIComboBox* combos[] = { &m_ResolutionCombo, &m_LanguageCombo };
+    CNewUIComboBox* combos[] = { &m_ResolutionCombo, &m_LanguageCombo, &m_FpsCombo };
     for (auto* c : combos) if (!c->IsOpen()) c->Render();
     for (auto* c : combos) if (c->IsOpen())  c->Render();
 }
@@ -897,6 +987,37 @@ void SEASON3B::CNewUIOptionWindow::ApplyLanguage()
     // GameConfig string-IO. Locale codes are ASCII so the conversion is safe.
     std::wstring wide(code, code + std::strlen(code));
     GameConfig::GetInstance().SetUILocale(wide);
+    GameConfig::GetInstance().Save();
+}
+
+int SEASON3B::CNewUIOptionWindow::FindCurrentFpsIndex()
+{
+    const int current = GameConfig::GetInstance().GetFPSLimit();
+    for (int i = 0; i < s_NumFpsOptions; ++i)
+    {
+        if (s_FpsOptions[i].fps == current)
+            return i;
+    }
+
+    return 0; // unknown/custom values fall back to "Sem limite" in the UI
+}
+
+void SEASON3B::CNewUIOptionWindow::ApplyFrameTiming()
+{
+    const int fps = s_FpsOptions[m_iFpsIndex].fps;
+
+    GameConfig::GetInstance().SetVSync(m_bVSync);
+    GameConfig::GetInstance().SetFPSLimit(fps);
+
+    if (IsVSyncAvailable())
+    {
+        if (m_bVSync)
+            EnableVSync();
+        else
+            DisableVSync();
+    }
+
+    SetTargetFps(fps);
     GameConfig::GetInstance().Save();
 }
 
