@@ -88,6 +88,18 @@ namespace
         {
             text = L"Recompensa do Ranking da Gens";
         }
+        else if (text == L"You have accepted the first trial. I want you to prove your combat prowess by defeating 5 Guardsmen in Chaos Castle, delivering Archangel's weapon in Blood Castle, and surviving till the end in Devil Square. Complete the mission and you'll be rewarded with either a Jewel of Bless, a Jewel of Soul, or a Jewel of Chaos.")
+        {
+            text = L"Voc\u00EA aceitou a primeira prova. Demonstre sua habilidade em combate derrotando 5 Guardas no Chaos Castle, entregando a arma do Arcanjo no Blood Castle e sobrevivendo at\u00E9 o fim no Devil Square. Conclua a miss\u00E3o e receber\u00E1 como recompensa uma Jewel of Bless, uma Jewel of Soul ou uma Jewel of Chaos.";
+        }
+        else if (text == L"Good decision. This mission requires you to raise your worth by claiming victory in Illusion Temple. Complete the mission and you'll be rewarded with 800,000 Exp.")
+        {
+            text = L"Boa decis\u00E3o. Nesta miss\u00E3o, voc\u00EA deve provar seu valor conquistando a vit\u00F3ria no Illusion Temple. Conclua a miss\u00E3o e receber\u00E1 800.000 de experi\u00EAncia.";
+        }
+        else if (text == L"Good decision. The first mission for the second trial involves defeating 10 Guardsmen in Chaos Castle, delivering Archangel's weapon in Blood Castle, and surviving until the end of Devil Square. Complete the mission and you'll be rewarded with either a Jewel of Bless, a Jewel of Soul, a Jewel of Chaos, or a Jewel of Harmony.")
+        {
+            text = L"Boa decis\u00E3o. A primeira miss\u00E3o da segunda prova consiste em derrotar 10 Guardas no Chaos Castle, entregar a arma do Arcanjo no Blood Castle e sobreviver at\u00E9 o fim no Devil Square. Conclua a miss\u00E3o e receber\u00E1 como recompensa uma Jewel of Bless, uma Jewel of Soul, uma Jewel of Chaos ou uma Jewel of Harmony.";
+        }
     }
 }
 
