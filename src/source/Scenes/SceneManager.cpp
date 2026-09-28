@@ -617,8 +617,14 @@ static void RenderFpsCounter()
  */
 static void CheckServerConnection()
 {
+    static BOOL s_bClosed = FALSE;
+
     if (SocketClient != nullptr && SocketClient->IsConnected())
     {
+        // A later successful connection must re-arm the one-shot popup. Without
+        // this reset, one disconnect outside MAIN_SCENE suppresses every future
+        // "server lost" notification for the lifetime of the client.
+        s_bClosed = FALSE;
         return;
     }
 
@@ -642,7 +648,6 @@ static void CheckServerConnection()
         return;
     }
 
-    static BOOL s_bClosed = FALSE;
     if (!s_bClosed)
     {
         s_bClosed = TRUE;
