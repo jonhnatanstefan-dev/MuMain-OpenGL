@@ -124,8 +124,9 @@ int g_iScreenSaverOldValue = 60 * 15;
 BOOL g_bUseWindowMode = TRUE;
 BOOL g_bUseFullscreenMode = FALSE;
 
-// In windowed mode, the native Windows cursor is used while the Options UI is open.
-bool g_UseNativeCursorForOptions = false;
+#ifdef _WIN32
+static bool g_screenSaverTimeoutChanged = false;
+#endif
 
 #include "Audio/AudioPlayer.h"
 
@@ -594,12 +595,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         const UINT hitTest = LOWORD(lParam);
 
-        // In windowed mode use the native cursor over the non-client frame
-        // and while the Options window is open. The OS cursor is composited
-        // after OpenGL, so the Options panel can never cover it.
+        // In windowed mode use the native cursor only over the non-client
+        // frame (title bar, borders and system buttons). The game client area
+        // continues to use MU's own software cursor.
         const bool useNativeCursor =
-            (g_bUseWindowMode == TRUE) &&
-            (hitTest != HTCLIENT || g_UseNativeCursorForOptions);
+            (g_bUseWindowMode == TRUE) && (hitTest != HTCLIENT);
 
         if (useNativeCursor)
         {
@@ -934,19 +934,21 @@ namespace
                 SetTargetFps(REFERENCE_FPS);
                 g_HasInactiveFpsOverride = true;
             }
-            if (g_bUseWindowMode == TRUE)
-            {
-                MouseLButton = false;
-                MouseLButtonPop = false;
-                MouseRButton = false;
-                MouseRButtonPop = false;
-                MouseRButtonPush = false;
-                MouseLButtonDBClick = false;
-                MouseMButton = false;
-                MouseMButtonPop = false;
-                MouseMButtonPush = false;
-                MouseWheel = 0;
-            }
+            // Always release mouse capture and transient button state when
+            // focus leaves the game. Limiting this to windowed mode can leave a
+            // held button/capture stuck after Alt+Tab from fullscreen.
+            ReleaseCapture();
+            MouseLButton = false;
+            MouseLButtonPop = false;
+            MouseLButtonPush = false;
+            MouseRButton = false;
+            MouseRButtonPop = false;
+            MouseRButtonPush = false;
+            MouseLButtonDBClick = false;
+            MouseMButton = false;
+            MouseMButtonPop = false;
+            MouseMButtonPush = false;
+            MouseWheel = 0;
         }
         else
         {
@@ -1623,8 +1625,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     // SDL owns the window and GL context (issue #442).
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
     {
-        g_ErrorReport.Write(L"> SDL video init failed.\r\n");
-        MessageBox(nullptr, L"Windows aplication error!", L"Aplication Error", MB_ICONERROR);
+        g_ErrorReport.Write(L"> SDL video init failed: %hs\r\n", SDL_GetError());
+        MessageBox(nullptr, L"Windows application error!", L"Application Error", MB_ICONERROR);
         return 0;
     }
 
@@ -1646,8 +1648,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     g_sdlWindow = SDL_CreateWindow("MU Online", static_cast<int>(WindowWidth), static_cast<int>(WindowHeight), windowFlags);
     if (!g_sdlWindow)
     {
-        g_ErrorReport.Write(L"> SDL_CreateWindow failed.\r\n");
-        MessageBox(nullptr, L"Windows aplication error!", L"Aplication Error", MB_ICONERROR);
+        g_ErrorReport.Write(L"> SDL_CreateWindow failed: %hs\r\n", SDL_GetError());
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        MessageBox(nullptr, L"Windows application error!", L"Application Error", MB_ICONERROR);
         return 0;
     }
 
@@ -1661,20 +1664,45 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     g_sdlGLContext = SDL_GL_CreateContext(g_sdlWindow);
     if (!g_sdlGLContext)
     {
-        g_ErrorReport.Write(L"OpenGL Create Context Error.\r\n");
+        g_ErrorReport.Write(L"OpenGL Create Context Error: %hs\r\n", SDL_GetError());
         KillGLWindow();
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
         MessageBox(nullptr, I18N::Game::InstallTheLatestGraphicsCardDriver, L"OpenGL Create Context Error.", MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
 
-    SDL_GL_MakeCurrent(g_sdlWindow, g_sdlGLContext);
+    if (!SDL_GL_MakeCurrent(g_sdlWindow, g_sdlGLContext))
+    {
+        g_ErrorReport.Write(L"OpenGL MakeCurrent Error: %hs\r\n", SDL_GetError());
+        KillGLWindow();
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        MessageBox(nullptr, I18N::Game::InstallTheLatestGraphicsCardDriver, L"OpenGL Context Error.", MB_OK | MB_ICONEXCLAMATION);
+        return FALSE;
+    }
 
 #ifdef _WIN32
     // Bridge SDL's native handles so the remaining Win32 code (IME, DirectSound,
     // cursor, the legacy EDIT-control text boxes) keeps working.
     g_hWnd = static_cast<HWND>(SDL_GetPointerProperty(
         SDL_GetWindowProperties(g_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+    if (g_hWnd == nullptr)
+    {
+        g_ErrorReport.Write(L"> SDL did not expose a native Win32 window handle.\r\n");
+        KillGLWindow();
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        MessageBox(nullptr, L"Unable to obtain the native game window.", L"Window Error", MB_ICONERROR);
+        return FALSE;
+    }
+
     g_hDC = GetDC(g_hWnd);
+    if (g_hDC == nullptr)
+    {
+        g_ErrorReport.Write(L"> GetDC failed for the game window.\r\n");
+        KillGLWindow();
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        MessageBox(nullptr, L"Unable to initialize the game drawing surface.", L"Window Error", MB_ICONERROR);
+        return FALSE;
+    }
     g_hRC = wglGetCurrentContext();
     // Restore the last window position when it still belongs to
     // one of the currently connected monitors.
@@ -1873,26 +1901,35 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
 #ifdef _WIN32
     if (g_bUseWindowMode == FALSE)
     {
-        int nOldVal;
-        SystemParametersInfo(SPI_SCREENSAVERRUNNING, 1, &nOldVal, 0);
-        SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &g_iScreenSaverOldValue, 0);
-        SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, 300 * 60, nullptr, 0);
+        if (SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &g_iScreenSaverOldValue, 0))
+        {
+            if (SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, 300 * 60, nullptr, 0))
+                g_screenSaverTimeoutChanged = true;
+        }
     }
 #endif // _WIN32
 
     std::thread cpuUsageRecorder(RecordCpuUsage);
     const MSG msg = MainLoop();
 
-    // Teardown that used to run in WM_DESTROY, now after the loop exits (SDL owns
-    // the window/GL context, so they must not be destroyed from a message).
+    // Teardown runs after the loop exits. Release objects which own OpenGL
+    // resources before destroying the SDL GL context/window.
     DestroySound();
 #ifdef _EDITOR
     // Shut the editor's ImGui backends down while the GL context and SDL window
-    // are still alive; the static destructor runs too late (after KillGLWindow).
+    // are still alive; the static destructor runs too late.
     g_MuEditorCore.Shutdown();
 #endif
-    KillGLWindow();
     DestroyWindow();
+    KillGLWindow();
+
+#ifdef _WIN32
+    if (g_screenSaverTimeoutChanged)
+    {
+        SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, g_iScreenSaverOldValue, nullptr, 0);
+        g_screenSaverTimeoutChanged = false;
+    }
+#endif
 
     // RecordCpuUsage loops on !Destroy, so it exits once the loop above ended.
     // Join it before WinMain returns; a joinable std::thread destroyed unjoined
