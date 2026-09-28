@@ -153,11 +153,34 @@ namespace
             return false;
         };
 
+        const std::wstring npcNotImplementedPrefix = L"Talking to this NPC (";
+        const std::wstring npcNotImplementedSuffix = L") is not implemented yet!";
+        const bool isNpcNotImplemented =
+            localized.size() > npcNotImplementedPrefix.size() + npcNotImplementedSuffix.size()
+            && localized.compare(0, npcNotImplementedPrefix.size(), npcNotImplementedPrefix) == 0
+            && localized.compare(
+                localized.size() - npcNotImplementedSuffix.size(),
+                npcNotImplementedSuffix.size(),
+                npcNotImplementedSuffix) == 0;
+
         const bool isHappyHour =
             localized.find(L"Happy Hour Event") != std::wstring::npos
             || localized.find(L"Happy Hour event") != std::wstring::npos;
 
-        if (isHappyHour && localized.find(L"has been started") != std::wstring::npos)
+        if (isNpcNotImplemented)
+        {
+            std::wstring npcInfo = localized.substr(
+                npcNotImplementedPrefix.size(),
+                localized.size() - npcNotImplementedPrefix.size() - npcNotImplementedSuffix.size());
+
+            if (npcInfo == L"247, Crossbow Guard")
+                npcInfo = L"247, Guarda Besteiro";
+
+            localized = L"A intera\u00E7\u00E3o com este NPC (";
+            localized += npcInfo;
+            localized += L") ainda n\u00E3o foi implementada.";
+        }
+        else if (isHappyHour && localized.find(L"has been started") != std::wstring::npos)
         {
             localized = L"Evento Happy Hour iniciado!";
         }
