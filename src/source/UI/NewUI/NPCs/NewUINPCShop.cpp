@@ -242,7 +242,10 @@ void SEASON3B::CNewUINPCShop::RenderTexts()
     g_pRenderText->RenderText(m_Pos.x, m_Pos.y + 12, I18N::Game::Merchant, NPCSHOP_WIDTH, 0, RT3_SORT_CENTER);
 
     wchar_t strText[256];
-    mu_swprintf(strText, I18N::Game::TaxRateDChangedInRealTime, m_iTaxRate);
+    if (I18N::GetCurrentLocale()[0] == 'p' && I18N::GetCurrentLocale()[1] == 't')
+        mu_swprintf(strText, L"Imposto: %d%%", m_iTaxRate);
+    else
+        mu_swprintf(strText, I18N::Game::TaxRateDChangedInRealTime, m_iTaxRate);
     g_pRenderText->RenderText(m_Pos.x, m_Pos.y + 27, strText, NPCSHOP_WIDTH, 0, RT3_SORT_CENTER);
 }
 
