@@ -176,10 +176,23 @@ bool CNewUIStorageInventory::Render()
     for (int i = BTN_INSERT_ZEN; i < MAX_BTN; ++i)
         m_abtn[i].Render();
 
-    if (CharacterAttribute->IsVaultExtended > 0)
+    // Keep the expanded-vault option visible even when the account has not
+    // been granted the server-side extension yet. This makes the feature state
+    // explicit in the UI instead of silently hiding the button.
+    if (CharacterAttribute != nullptr && CharacterAttribute->IsVaultExtended > 0)
     {
-        m_BtnExpand.Render();
+        m_BtnExpand.UnLock();
+        m_BtnExpand.ChangeImgColor(BUTTON_STATE_UP, RGBA(255, 255, 255, 255));
+        m_BtnExpand.ChangeImgColor(BUTTON_STATE_DOWN, RGBA(255, 255, 255, 255));
     }
+    else
+    {
+        m_BtnExpand.Lock();
+        m_BtnExpand.ChangeImgColor(BUTTON_STATE_UP, RGBA(100, 100, 100, 255));
+        m_BtnExpand.ChangeImgColor(BUTTON_STATE_DOWN, RGBA(100, 100, 100, 255));
+    }
+
+    m_BtnExpand.Render();
 
     DisableAlphaBlend();
 
