@@ -1155,17 +1155,22 @@ MSG MainLoop()
             {
             case SDL_EVENT_QUIT:
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-                // Handle the title-bar X / Alt+F4 immediately. Waiting for a
-                // later SDL_EVENT_QUIT can leave the client alive until another
-                // Windows input/focus event arrives.
+                // Title-bar X / Alt+F4 must follow the same graceful server
+                // logout path as the in-game Exit Game action. Closing the
+                // socket here can abort the logout packet before OpenMU saves
+                // the latest inventory/equipment state.
                 if (!Destroy)
                 {
                     ReconnectManager::Instance().ClearSession();
-                    if (SocketClient != nullptr)
+
+                    if (SocketClient != nullptr && g_bGameServerConnected)
                     {
-                        SocketClient->Close();
-                        g_bGameServerConnected = false;
+                        SocketClient->ToGameServer()->SendLogOut(LogOutType::CloseGame);
+                        g_ConsoleDebug->Write(MCD_SEND, L"0xF1 [WindowCloseLogOut] 0");
                     }
+
+                    // Leave the main loop immediately. Normal runtime teardown
+                    // closes the socket after the logout packet has been queued.
                     Destroy = true;
                 }
                 break;
