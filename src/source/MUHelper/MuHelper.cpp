@@ -877,7 +877,11 @@ namespace MUHelper
             const float fSkillDistance = gSkillManager.GetSkillDistance(m_iCurrentSkill, Hero);
             if (GameLogic::Combat::CanExecuteSkill(Hero, m_iCurrentSkill, fSkillDistance))
             {
-                return SimulateAttack(m_iCurrentSkill);
+                // A configured skill can temporarily fail (cooldown, mana,
+                // animation state, server rejection). Do not let that suppress
+                // Basic Attack Fallback for the whole helper tick.
+                if (SimulateAttack(m_iCurrentSkill) != 0)
+                    return 1;
             }
         }
 
