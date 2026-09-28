@@ -38,7 +38,7 @@ namespace
         // e algumas entradas do arquivo POR continuam em inglês.
         if (text.find(L"My collection is much more diverse than the ordinary merchants") != std::wstring::npos)
         {
-            text = L"Posso ajudar? Minha coleção é muito mais variada que a dos comerciantes comuns. Esse é o segredo do meu sucesso, haha.";
+            text = L"Posso ajudar? Minha cole\\u00E7\\u00E3o \\u00E9 muito mais variada que a dos comerciantes comuns. Esse \\u00E9 o segredo do meu sucesso, haha.";
         }
         else if (text == L"I'm here for your request.")
         {
@@ -285,7 +285,7 @@ void CQuestMng::SetNPC(int nNPCIndex)
     // The runtime monster-name table may still expose this NPC in English
     // even though NpcName_Por.txt already contains the Portuguese caption.
     if (IsPortugueseClientLocale() && nNPCIndex == 568)
-        m_szNPCName = L"Mercador Nômade Zyro";
+        m_szNPCName = L"Mercador N\\u00F4made Zyro";
 }
 
 int CQuestMng::GetNPCIndex()

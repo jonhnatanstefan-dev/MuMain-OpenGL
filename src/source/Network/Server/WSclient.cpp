@@ -102,13 +102,18 @@ namespace
 
         std::wstring localized(text);
 
-        if (localized == L"Happy Hour Event has been started!")
+        const bool isHappyHour =
+            localized.find(L"Happy Hour Event") != std::wstring::npos
+            || localized.find(L"Happy Hour event") != std::wstring::npos;
+
+        if (isHappyHour && localized.find(L"has been started") != std::wstring::npos)
         {
             localized = L"Evento Happy Hour iniciado!";
         }
-        else if (localized == L"Happy Hour Event has been ended!"
-            || localized == L"Happy Hour Event has been finished!"
-            || localized == L"Happy Hour Event has been stopped!")
+        else if (isHappyHour
+            && (localized.find(L"has been ended") != std::wstring::npos
+                || localized.find(L"has been finished") != std::wstring::npos
+                || localized.find(L"has been stopped") != std::wstring::npos))
         {
             localized = L"Evento Happy Hour encerrado!";
         }
