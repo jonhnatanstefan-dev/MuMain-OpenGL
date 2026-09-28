@@ -1154,6 +1154,16 @@ MSG MainLoop()
             switch (event.type)
             {
             case SDL_EVENT_QUIT:
+                // Native window close (the title-bar X) bypasses WndProc's
+                // WM_DESTROY path. Close the network connection here as well;
+                // otherwise its worker can remain alive while global teardown
+                // runs, which made title-bar shutdown take minutes.
+                ReconnectManager::Instance().ClearSession();
+                if (SocketClient != nullptr)
+                {
+                    SocketClient->Close();
+                    g_bGameServerConnected = false;
+                }
                 Destroy = true;
                 break;
             case SDL_EVENT_MOUSE_MOTION:
