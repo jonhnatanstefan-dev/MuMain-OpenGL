@@ -731,7 +731,10 @@ void CNewUIMyInventory::RenderSetOption()
     }
 
     wchar_t strText[128];
-    mu_swprintf(strText, L"[%ls]", I18N::Game::SetOption);
+    if (I18N::GetCurrentLocale()[0] == 'p' && I18N::GetCurrentLocale()[1] == 't')
+        mu_swprintf(strText, L"[Set]");
+    else
+        mu_swprintf(strText, L"[%ls]", I18N::Game::SetOption);
     g_pRenderText->RenderText(m_Pos.x + INVENTORY_WIDTH * 0.2f, m_Pos.y + 25, strText, INVENTORY_WIDTH * 0.3f, 0, RT3_SORT_CENTER);
 
     if (g_csItemOption.IsViewOptionList() == true)
@@ -755,7 +758,10 @@ void CNewUIMyInventory::RenderSocketOption()
     }
 
     wchar_t strText[128];
-    mu_swprintf(strText, L"[%ls]", I18N::Game::SocketOption);
+    if (I18N::GetCurrentLocale()[0] == 'p' && I18N::GetCurrentLocale()[1] == 't')
+        mu_swprintf(strText, L"[Socket]");
+    else
+        mu_swprintf(strText, L"[%ls]", I18N::Game::SocketOption);
     g_pRenderText->RenderText(m_Pos.x + INVENTORY_WIDTH * 0.5f, m_Pos.y + 25, strText, INVENTORY_WIDTH * 0.3f, 0, RT3_SORT_CENTER);
 
     if (CheckMouseIn(m_Pos.x + INVENTORY_WIDTH * 0.5f, m_Pos.y + 20, INVENTORY_WIDTH * 0.5f, 15) == true)
