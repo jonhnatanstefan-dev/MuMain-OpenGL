@@ -41,3 +41,9 @@ build-mingw/
 **/*.log
 # Local-only files
 docs/reviews/
+
+# Local batch-development artifacts
+/out/
+*.bak_*
+*.bak
+/aplicar_*.ps1
