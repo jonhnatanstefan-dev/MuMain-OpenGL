@@ -223,7 +223,11 @@ void CNewUIStorageInventory::RenderText()
         m_Pos.x + 168, m_Pos.y + 342 + 8, szTemp, 0, 0, RT3_WRITE_RIGHT_TO_LEFT);
 
     g_pRenderText->SetTextColor(240, 64, 64, 255);
-    g_pRenderText->RenderText(m_Pos.x + 10 + 15, m_Pos.y + 342 + 29, I18N::Game::StorageFee);
+    const wchar_t* storageFeeLabel =
+        (I18N::GetCurrentLocale()[0] == 'p' && I18N::GetCurrentLocale()[1] == 't')
+        ? L"Taxa do baú"
+        : I18N::Game::StorageFee;
+    g_pRenderText->RenderText(m_Pos.x + 10 + 15, m_Pos.y + 342 + 29, storageFeeLabel);
 
     __int64 iTotalLevel = (__int64)CharacterAttribute->Level + Master_Level_Data.nMLevel;
 
