@@ -60,6 +60,34 @@ namespace
         {
             text = L"Recusar a miss\u00E3o";
         }
+        else if (text == L"How do you do? I am Gregory, the Gens Duprian Steward. What is your business with our gens?")
+        {
+            text = L"Como vai? Eu sou Gregory, o administrador da Gens Duprian. O que deseja tratar com nossa Gens?";
+        }
+        else if (text == L"Accept a gens quest.")
+        {
+            text = L"Aceitar uma miss\u00E3o da Gens.";
+        }
+        else if (text == L"Ask about Gens Duprian.")
+        {
+            text = L"Perguntar sobre a Gens Duprian.";
+        }
+        else if (text == L"Ask about the gens dispute.")
+        {
+            text = L"Perguntar sobre a disputa entre as Gens.";
+        }
+        else if (text == L"Join Gens Duprian.")
+        {
+            text = L"Entrar para a Gens Duprian.";
+        }
+        else if (text == L"Leave Gens Duprian.")
+        {
+            text = L"Sair da Gens Duprian.";
+        }
+        else if (text == L"Gens Ranking Reward")
+        {
+            text = L"Recompensa do Ranking da Gens";
+        }
     }
 }
 
@@ -303,6 +331,12 @@ void CQuestMng::SetNPC(int nNPCIndex)
     {
         switch (nNPCIndex)
         {
+        case 247:
+            m_szNPCName = L"Guarda Besteiro";
+            break;
+        case 543:
+            m_szNPCName = L"Administrador da Gens Duprian";
+            break;
         case 568:
             m_szNPCName = L"Mercador N\u00F4made Zyro";
             break;
