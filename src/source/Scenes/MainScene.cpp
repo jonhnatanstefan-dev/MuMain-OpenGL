@@ -551,28 +551,12 @@ static void RenderMainSceneUI()
 #endif //ENABLE_EDIT
 
     EndBitmap();
+
+    // Keep the original MU software cursor path here. The experimental native
+    // cursor handoff for the Options window is intentionally not used; it caused
+    // inconsistent visibility and is being handled separately from this batch.
     BeginBitmap();
-
-    // CURSOR_NATIVE_WHILE_OPTIONS
-    extern BOOL g_bUseWindowMode;
-    extern bool g_UseNativeCursorForOptions;
-    g_UseNativeCursorForOptions =
-        g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_OPTION);
-
-    // In windowed mode the Options window uses the native Windows cursor.
-    // This completely avoids OpenGL Z/depth/scissor ordering issues.
-    if (!(g_bUseWindowMode == TRUE && g_UseNativeCursorForOptions))
-    {
-        // CURSOR_ALWAYS_ON_TOP
-        glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_SCISSOR_BIT | GL_STENCIL_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_SCISSOR_TEST);
-        glDisable(GL_STENCIL_TEST);
-        glDepthMask(GL_FALSE);
-        RenderCursor();
-        glPopAttrib();
-    }
-
+    RenderCursor();
     EndBitmap();
 }
 
