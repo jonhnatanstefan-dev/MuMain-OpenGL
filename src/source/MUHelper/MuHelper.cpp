@@ -155,6 +155,7 @@ namespace MUHelper
         }
 
         m_bActive = true;
+        RefreshTargetsFromViewport();
         g_ConsoleDebug->Write(MCD_NORMAL, L"[MU Helper] Started");
     }
 
@@ -250,6 +251,10 @@ namespace MUHelper
                 return;
             }
 
+            // Keep target discovery independent from movement/attack packets.
+            // This also picks up monsters which entered the viewport while the
+            // helper was temporarily busy collecting or regrouping.
+            RefreshTargetsFromViewport();
             Attack();
 
             RepairEquipments();
@@ -422,6 +427,47 @@ namespace MUHelper
         }
 
         return iFarthestMonsterId;
+    }
+
+    void CMuHelper::RefreshTargetsFromViewport()
+    {
+        if (!m_bActive || Hero == nullptr || CharactersClient == nullptr)
+        {
+            return;
+        }
+
+        // Monster viewport packets usually arrive before the player starts the
+        // helper. AddTarget() intentionally ignores packets while inactive, so
+        // without this scan an already-visible stationary monster is never
+        // registered and the helper can run (and consume Zen) without attacking.
+        std::set<int> discoveredTargets;
+
+        for (int i = 0; i < MAX_CHARACTERS_CLIENT; ++i)
+        {
+            CHARACTER* pTarget = &CharactersClient[i];
+
+            if (pTarget == Hero || !pTarget->Object.Live || pTarget->Dead > 0)
+            {
+                continue;
+            }
+
+            if (!IsMonster(pTarget) || pTarget->Key <= 0)
+            {
+                continue;
+            }
+
+            if (ComputeDistanceFromTarget(pTarget) <= m_iHuntingDistance)
+            {
+                discoveredTargets.insert(pTarget->Key);
+            }
+        }
+
+        if (!discoveredTargets.empty())
+        {
+            _targetsLock.lock();
+            m_setTargets.insert(discoveredTargets.begin(), discoveredTargets.end());
+            _targetsLock.unlock();
+        }
     }
 
     void CMuHelper::CleanupTargets()
