@@ -84,6 +84,58 @@
 
 #define MAX_DEBUG_MAX 10
 
+namespace
+{
+    bool IsPortugueseServerTextLocale()
+    {
+        const char* locale = I18N::GetCurrentLocale();
+        return locale != nullptr
+            && locale[0] == 'p'
+            && locale[1] == 't'
+            && (locale[2] == '\0' || locale[2] == '-' || locale[2] == '_');
+    }
+
+    void LocalizePortugueseServerText(wchar_t* text, size_t capacity)
+    {
+        if (text == nullptr || capacity == 0 || !IsPortugueseServerTextLocale())
+            return;
+
+        std::wstring localized(text);
+
+        if (localized == L"Happy Hour Event has been started!")
+        {
+            localized = L"Evento Happy Hour iniciado!";
+        }
+        else if (localized == L"Happy Hour Event has been ended!"
+            || localized == L"Happy Hour Event has been finished!"
+            || localized == L"Happy Hour Event has been stopped!")
+        {
+            localized = L"Evento Happy Hour encerrado!";
+        }
+        else
+        {
+            const auto replaceSuffix = [&localized](const wchar_t* suffix, const wchar_t* replacement)
+            {
+                const std::wstring suffixText(suffix);
+                if (localized.size() < suffixText.size()
+                    || localized.compare(localized.size() - suffixText.size(), suffixText.size(), suffixText) != 0)
+                    return false;
+
+                localized.replace(localized.size() - suffixText.size(), suffixText.size(), replacement);
+                return true;
+            };
+
+            if (!replaceSuffix(L" entered the game.", L" entrou no jogo."))
+                if (!replaceSuffix(L" entered the game", L" entrou no jogo"))
+                    if (!replaceSuffix(L" left the game.", L" saiu do jogo."))
+                        replaceSuffix(L" left the game", L" saiu do jogo");
+        }
+
+        ::wcsncpy(text, localized.c_str(), capacity - 1);
+        text[capacity - 1] = L'\0';
+    }
+}
+
 extern BYTE m_AltarState[];
 extern int g_iChatInputType;
 extern BOOL g_bUseChatListBox;
@@ -1933,6 +1985,7 @@ void ReceiveNotice(const BYTE* ReceiveBuffer)
     auto Data = (LPPRECEIVE_NOTICE)ReceiveBuffer;
     wchar_t Text[256]{};
     CMultiLanguage::ConvertFromUtf8(Text, Data->Notice);
+    LocalizePortugueseServerText(Text, sizeof(Text) / sizeof(Text[0]));
 
     if (Data->Result == 0)
     {

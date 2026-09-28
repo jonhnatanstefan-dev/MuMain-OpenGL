@@ -18,6 +18,35 @@
 
 #define	QM_QUESTWORDS_FILE			std::wstring(L"Data\\Local\\"+g_strSelectedML+L"\\QuestWords_"+g_strSelectedML+L".bmd").c_str()
 
+namespace
+{
+    bool IsPortugueseClientLocale()
+    {
+        const char* locale = I18N::GetCurrentLocale();
+        return locale != nullptr
+            && locale[0] == 'p'
+            && locale[1] == 't'
+            && (locale[2] == '\0' || locale[2] == '-' || locale[2] == '_');
+    }
+
+    void LocalizePortugueseLegacyQuestWord(std::wstring& text)
+    {
+        if (!IsPortugueseClientLocale())
+            return;
+
+        // A parte antiga dos diálogos usa QuestWords_<lang>.bmd em runtime,
+        // e algumas entradas do arquivo POR continuam em inglês.
+        if (text.find(L"My collection is much more diverse than the ordinary merchants") != std::wstring::npos)
+        {
+            text = L"Posso ajudar? Minha coleção é muito mais variada que a dos comerciantes comuns. Esse é o segredo do meu sucesso, haha.";
+        }
+        else if (text == L"I'm here for your request.")
+        {
+            text = L"Estou aqui para atender ao seu pedido.";
+        }
+    }
+}
+
 CQuestMng g_QuestMng;
 
 CQuestMng::CQuestMng()
@@ -134,6 +163,7 @@ void CQuestMng::LoadQuestWordsScript()
         CMultiLanguage::ConvertFromUtf8(szWords, rawWords, 1024);
 
         std::wstring strWords = szWords;
+        LocalizePortugueseLegacyQuestWord(strWords);
         m_mapQuestWords.insert(std::make_pair(sQuestWordsHeader.m_nIndex, strWords));
     }
 
@@ -251,6 +281,11 @@ void CQuestMng::SetNPC(int nNPCIndex)
 {
     m_nNPCIndex = nNPCIndex;
     m_szNPCName = getMonsterName(nNPCIndex);
+
+    // The runtime monster-name table may still expose this NPC in English
+    // even though NpcName_Por.txt already contains the Portuguese caption.
+    if (IsPortugueseClientLocale() && nNPCIndex == 568)
+        m_szNPCName = L"Mercador Nômade Zyro";
 }
 
 int CQuestMng::GetNPCIndex()
