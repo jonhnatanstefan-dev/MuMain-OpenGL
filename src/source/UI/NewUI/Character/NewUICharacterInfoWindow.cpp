@@ -346,7 +346,7 @@ void SEASON3B::CNewUICharacterInfoWindow::RenderTableTexts()
     {
         mu_swprintf(
             strLevel,
-            L"Lv %u | R %u | GR %u | VIP %u",
+            L"Lv%u R%u GR%u V%u",
             static_cast<unsigned>(CharacterAttribute->Level),
             static_cast<unsigned>(CharacterAttribute->Resets),
             static_cast<unsigned>(CharacterAttribute->GrandResets),
