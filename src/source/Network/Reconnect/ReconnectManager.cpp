@@ -80,8 +80,20 @@ void ReconnectManager::CacheCharacter(const wchar_t* characterName)
 
 void ReconnectManager::ClearSession()
 {
+    CloseProbe();
+
+    m_active = false;
+    m_beginPending = false;
+    m_cancelRequested = false;
+    m_abortAfterTeardown = false;
+    m_muHelperWasActive = false;
+    m_phase = Phase::Idle;
+    m_phaseStartTime = 0.0;
+    m_probeStartTime = 0.0;
+
     m_hasSession = false;
     m_serverIp[0] = L'\0';
+    m_serverPort = 0;
     m_username[0] = L'\0';
     m_password[0] = L'\0';
     m_characterName[0] = L'\0';
@@ -239,8 +251,12 @@ void ReconnectManager::StartProbe()
     static bool s_wsaInitialised = false;
     if (!s_wsaInitialised)
     {
-        WSADATA wsaData;
-        WSAStartup(MAKEWORD(2, 2), &wsaData);
+        WSADATA wsaData = {};
+        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+        {
+            EnterPhase(Phase::Probing);
+            return;
+        }
         s_wsaInitialised = true;
     }
 
@@ -270,9 +286,16 @@ void ReconnectManager::StartProbe()
     FreeAddrInfoW(resolved);
 
     u_long nonBlocking = 1;
-    ioctlsocket(probe, FIONBIO, &nonBlocking);
+    if (ioctlsocket(probe, FIONBIO, &nonBlocking) != 0)
+    {
+        closesocket(probe);
+        EnterPhase(Phase::Probing);
+        return;
+    }
 
-    connect(probe, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));  // WSAEWOULDBLOCK expected
+    // Non-blocking connect normally reports WSAEWOULDBLOCK; completion is
+    // checked from PollProbe so the render thread never stalls here.
+    connect(probe, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
 
     m_probeSocket = static_cast<uintptr_t>(probe);
     m_probeStartTime = WorldTime;
@@ -482,6 +505,7 @@ void ReconnectManager::Abort()
     m_beginPending = false;
     m_cancelRequested = false;
     m_abortAfterTeardown = false;
+    m_muHelperWasActive = false;
     m_phase = Phase::Idle;
     CloseProbe();
 
