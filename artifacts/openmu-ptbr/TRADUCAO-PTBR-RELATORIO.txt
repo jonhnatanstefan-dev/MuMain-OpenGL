@@ -1,0 +1,47 @@
+OPENMU - PACOTE COMPLETO DE RECURSOS PT-BR
+===========================================
+
+Escopo
+------
+Pacote gerado a partir dos arquivos .resx enviados do repositório OpenMU.
+As traduções pt-BR já existentes foram preservadas e os recursos restantes
+foram preenchidos em português brasileiro.
+
+Resumo
+------
+Arquivos pt-BR no pacote: 13
+Entradas de recursos: 4025
+Recursos-base com par pt-BR validado: 12
+Chaves ausentes em relação aos recursos-base: 0
+Chaves extras em relação aos recursos-base: 0
+Incompatibilidades de placeholders ({0}, {1}, etc.): 0
+Erros de XML: 0
+
+Arquivos incluídos
+------------------
+src/DataModel/Properties/ModelResources.pt-BR.resx
+src/DataModel/Properties/Resources.pt-BR.resx
+src/GameLogic/Properties/PlayerMessage.pt-BR.resx
+src/GameLogic/Properties/PlugInResources.pt-BR.resx
+src/GameServer/Properties/PlugInResources.pt-BR.resx
+src/Interfaces/Properties/ModelResources.pt-BR.resx
+src/Network/Properties/PlugInResources.pt-BR.resx
+src/Network/Properties/Resources.pt-BR.resx
+src/Persistence/Initialization/Properties/PlugInResources.pt-BR.resx
+src/Web/AdminPanel/Properties/Resources.pt-BR.resx
+src/Web/Map/Properties/Resources.pt-BR.resx
+src/Web/Shared/Properties/PlugInPointResources.pt-BR.resx
+src/Web/Shared/Properties/Resources.pt-BR.resx
+
+Observações
+-----------
+1. O pacote cobre a camada de localização baseada em arquivos .resx presente
+   no material enviado.
+2. Nomes próprios, identificadores técnicos e termos usuais do MU/OpenMU
+   foram mantidos quando apropriado, por exemplo Game Master, PK, Zen,
+   Chaos Machine, NPC, API, Guild e nomes de eventos/entidades do jogo.
+3. Recursos gráficos/binários de aplicações WinForms/ClientLauncher não foram
+   convertidos em texto. O foco do pacote é a localização server-side/web.
+4. Textos escritos diretamente em arquivos .razor/.cs (hardcoded) não podem
+   ser cobertos apenas por arquivos .resx e podem exigir uma última varredura
+   após a implantação.
